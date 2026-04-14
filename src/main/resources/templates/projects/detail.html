@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html th:replace="~{layout :: layout(content=~{::main})}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2" th:text="${project.name}">Проект</h1>
+        <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">+ Новая задача</button>
+        </div>
+    </div>
+
+    <div class="row flex-nowrap overflow-auto" id="kanban-board">
+        <th:block th:each="status : ${statuses}">
+            <div class="col" style="min-width: 280px;">
+                <div class="card">
+                    <div class="card-header" th:text="${status}">Статус</div>
+                    <div class="card-body p-2">
+                        <div class="task-list" th:attr="data-status=${status}" th:id="'col-' + ${status}">
+                            <th:block th:if="${tasksByStatus.containsKey(status)}">
+                                <div th:each="task : ${tasksByStatus.get(status)}"
+                                     th:replace="~{fragments/task-card :: taskCard(task=${task})}"></div>
+                            </th:block>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </th:block>
+    </div>
+</main>
+
+<div th:replace="~{fragments/modals :: createTaskModal(projectId=${project.id})}"></div>
+</body>
+</html>

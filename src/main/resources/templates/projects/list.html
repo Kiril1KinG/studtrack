@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html th:replace="~{layout :: layout(content=~{::main})}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Мои проекты</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="/projects/create" class="btn btn-sm btn-outline-primary">+ Создать проект</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <th:block th:if="${projects.isEmpty()}">
+            <div class="col-12">
+                <div class="alert alert-info">У вас пока нет проектов. <a href="/projects/create">Создайте первый</a></div>
+            </div>
+        </th:block>
+
+        <div th:each="project : ${projects}" class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a th:href="@{/projects/{id}(id=${project.id})}" th:text="${project.name}">Название</a>
+                    </h5>
+                    <p class="card-text text-muted" th:text="${project.description}">Описание</p>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <small class="text-muted">Владелец: <span th:text="${project.owner.fullName}">Имя</span></small>
+                    <small class="text-muted d-block">Участников: <span th:text="${project.members.size()}">0</span></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

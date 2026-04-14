@@ -1,0 +1,49 @@
+<div th:fragment="createTaskModal(projectId)"
+     class="modal fade"
+     id="createTaskModal"
+     tabindex="-1"
+     xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{/api/projects/{id}/tasks(id=${projectId})}"
+                  method="post"
+                  hx-post="@{/api/projects/{id}/tasks(id=${projectId})}"
+                  hx-target="#kanban-board"
+                  hx-swap="outerHTML"
+                  hx-on:after-request="bootstrap.Modal.getInstance(document.getElementById('createTaskModal')).hide()">
+                <div class="modal-header">
+                    <h5 class="modal-title">Новая задача</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Приоритет</label>
+                        <select name="priority" class="form-select">
+                            <option value="LOW">Низкий</option>
+                            <option value="MEDIUM" selected>Средний</option>
+                            <option value="HIGH">Высокий</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="reviewRequired" class="form-check-input" id="reviewRequiredCheck">
+                            <label class="form-check-label" for="reviewRequiredCheck">Требуется ревью</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

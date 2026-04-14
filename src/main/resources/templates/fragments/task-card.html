@@ -1,0 +1,17 @@
+<div th:fragment="taskCard(task)" class="card mb-2 task-card" th:data-task-id="${task.id}" style="cursor: grab;" xmlns:th="http://www.thymeleaf.org">
+    <div class="card-body p-2">
+        <div class="d-flex justify-content-between align-items-start">
+            <h6 class="card-title mb-1">
+                <a href="#" th:href="@{/tasks/{id}(id=${task.id})}" th:text="${task.title}">Заголовок</a>
+            </h6>
+            <span class="badge" th:classappend="${task.priority == T(ru.diploma.studtrack.model.Task.Priority).HIGH} ? 'bg-danger' : (${task.priority == T(ru.diploma.studtrack.model.Task.Priority).MEDIUM} ? 'bg-warning' : 'bg-secondary')"
+                  th:text="${task.priority}">PRIORITY</span>
+        </div>
+        <div th:if="${task.assignee != null}" class="small text-muted">
+            <i class="bi bi-person"></i> <span th:text="${task.assignee.fullName}">Исполнитель</span>
+        </div>
+        <div th:if="${task.reviewRequired}" class="small text-info">
+            <i class="bi bi-check-circle"></i> Требуется ревью
+        </div>
+    </div>
+</div>

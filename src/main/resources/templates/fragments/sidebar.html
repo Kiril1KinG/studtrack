@@ -1,0 +1,17 @@
+<nav th:fragment="sidebar" id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+    <div class="position-sticky pt-3">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/projects}">
+                    <i class="bi bi-kanban"></i> Проекты
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/tasks/my}">
+                    <i class="bi bi-list-check"></i> Мои задачи
+                </a>
+            </li>
+        </ul>
+        <!-- Здесь можно динамически вывести список проектов позже -->
+    </div>
+</nav>

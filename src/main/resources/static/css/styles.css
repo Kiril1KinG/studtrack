@@ -1,0 +1,16 @@
+.sidebar {
+    min-height: 100vh;
+}
+
+.task-list {
+    min-height: 100px;
+}
+
+.task-card {
+    transition: transform 0.1s;
+}
+
+.task-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
