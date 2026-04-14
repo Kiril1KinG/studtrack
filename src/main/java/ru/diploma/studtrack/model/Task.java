@@ -81,6 +81,13 @@ public class Task {
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TaskReviewer> reviewers = new HashSet<>();
 
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("roundNumber ASC")
+    private List<TaskReviewRound> reviewRounds = new ArrayList<>();
+
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ChangeRequest> changeRequests = new HashSet<>();
+
     public enum TaskStatus {
         BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE
     }

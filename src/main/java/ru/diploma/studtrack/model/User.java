@@ -59,11 +59,17 @@ public class User {
     @OneToMany(mappedBy = "assignee")
     private Set<Task> assignedTasks = new HashSet<>();
 
-    @OneToMany(mappedBy = "reviewer")
-    private Set<Task> reviewTasks = new HashSet<>();
-
     @OneToMany(mappedBy = "author")
     private Set<Comment> comments = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    private Set<TaskReviewer> reviewAssignments = new HashSet<>();
+
+    @OneToMany(mappedBy = "initiator")
+    private Set<TaskReviewRound> initiatedRounds = new HashSet<>();
+
+    @OneToMany(mappedBy = "author")
+    private Set<ChangeRequest> authoredChangeRequests = new HashSet<>();
 
     public enum Role {
         STUDENT, TEACHER
