@@ -1,6 +1,9 @@
 package ru.diploma.studtrack.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.diploma.studtrack.exception.AlreadyExistsException;
@@ -17,17 +20,16 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    //TODO Временная заглушка для текущего пользователя (пока нет Security)
     public UUID getCurrentUserId() {
-        return userRepository.findAll().stream()
-                .findFirst()
-                .map(User::getId)
-                .orElseThrow(() -> new IllegalStateException("В базе данных нет ни одного пользователя"));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return findByEmail(email).getId();
     }
 
     public User getCurrentUser() {
-        return findById(getCurrentUserId());
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return findByEmail(email);
     }
 
     public User findById(UUID id) {
@@ -37,7 +39,7 @@ public class UserService {
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("Пользователь с email " + email + " не найден"));
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с email " + email + " не найден"));
     }
 
     public List<User> findAll() {
@@ -49,10 +51,16 @@ public class UserService {
     }
 
     @Transactional
-    public User create(User user) {
-        if (existsByEmail(user.getEmail())) {
-            throw new AlreadyExistsException("Пользователь", "email", user.getEmail());
+    public User register(String email, String password, String fullName, User.Role role) {
+        if (existsByEmail(email)) {
+            throw new AlreadyExistsException("Пользователь", "email", email);
         }
+        User user = User.builder()
+                .email(email)
+                .password(passwordEncoder.encode(password))
+                .fullName(fullName)
+                .role(role != null ? role : User.Role.STUDENT)
+                .build();
         return userRepository.save(user);
     }
 
@@ -60,7 +68,16 @@ public class UserService {
     public User update(UUID id, User updatedUser) {
         User existing = findById(id);
         existing.setFullName(updatedUser.getFullName());
-        //TODO Email и password пока не меняем
         return userRepository.save(existing);
+    }
+
+    @Transactional
+    public void changePassword(UUID id, String oldPassword, String newPassword) {
+        User user = findById(id);
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Неверный текущий пароль");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }
