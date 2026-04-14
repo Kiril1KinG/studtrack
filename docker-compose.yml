@@ -20,6 +20,10 @@ services:
 
   app:
     build: .
+    develop:
+      watch:
+        - action: rebuild
+          path: ./src
     container_name: studtrack-app
     depends_on:
       postgres:
