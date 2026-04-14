@@ -1,6 +1,7 @@
 package ru.diploma.studtrack.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.diploma.studtrack.exception.AccessDeniedException;
@@ -8,8 +9,10 @@ import ru.diploma.studtrack.exception.InvalidStateException;
 import ru.diploma.studtrack.exception.NotFoundException;
 import ru.diploma.studtrack.model.Project;
 import ru.diploma.studtrack.model.Task;
+import ru.diploma.studtrack.model.TaskReviewer;
 import ru.diploma.studtrack.model.User;
 import ru.diploma.studtrack.repository.TaskRepository;
+import ru.diploma.studtrack.repository.TaskReviewerRepository;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,9 +23,9 @@ import java.util.UUID;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final TaskReviewerRepository taskReviewerRepository;
     private final ProjectService projectService;
     private final UserService userService;
-    private final TaskReviewerService taskReviewerService;
 
     public List<Task> getTasksByProject(UUID projectId) {
         projectService.checkMembership(projectId);
@@ -81,16 +84,21 @@ public class TaskService {
     }
 
     @Transactional
+    public void delete(UUID id) {
+        Task task = findById(id);
+        projectService.checkMembership(task.getProject().getId());
+        taskRepository.delete(task);
+    }
+
+    @Transactional
     public Task changeStatus(UUID id, Task.TaskStatus newStatus) {
         Task task = findById(id);
         projectService.checkMembership(task.getProject().getId());
 
-        // Если задача требует ревью и переводится в REVIEW
         if (task.isReviewRequired() && newStatus == Task.TaskStatus.REVIEW) {
             validateReadyForReview(task);
         }
 
-        // Если задача переводится в DONE, проверяем права
         if (newStatus == Task.TaskStatus.DONE) {
             validateCanComplete(task);
         }
@@ -98,15 +106,6 @@ public class TaskService {
         task.setStatus(newStatus);
         return taskRepository.save(task);
     }
-
-    @Transactional
-    public void delete(UUID id) {
-        Task task = findById(id);
-        projectService.checkMembership(task.getProject().getId());
-        taskRepository.delete(task);
-    }
-
-    // Приватные проверки
 
     private void validateReadyForReview(Task task) {
         if (task.getAssignee() == null) {
@@ -122,32 +121,37 @@ public class TaskService {
         UUID currentUserId = userService.getCurrentUserId();
         Project project = task.getProject();
 
-        // Только владелец проекта может завершить задачу
         if (!project.getOwner().getId().equals(currentUserId)) {
             throw new AccessDeniedException("Завершить задачу может только владелец проекта");
         }
 
-        // Если ревью НЕ требуется — можно завершать сразу из любого статуса
-        if (!task.isReviewRequired()) {
-            return;
-        }
+        if (task.isReviewRequired()) {
+            if (task.getStatus() != Task.TaskStatus.REVIEW) {
+                throw new InvalidStateException(
+                        "Невозможно завершить задачу",
+                        "задача требует проверки, но не находится в статусе REVIEW",
+                        "сначала отправьте задачу на проверку"
+                );
+            }
 
-        // Если ревью требуется — задача должна пройти через REVIEW и получить одобрения
-        if (task.getStatus() != Task.TaskStatus.REVIEW) {
-            throw new InvalidStateException(
-                    "Невозможно завершить задачу",
-                    "задача требует проверки, но не находится в статусе REVIEW",
-                    "сначала отправьте задачу на проверку"
-            );
+            if (!isApprovedByMajority(task.getId())) {
+                throw new InvalidStateException(
+                        "Невозможно завершить задачу",
+                        "недостаточно одобрений от ревьюеров",
+                        "дождитесь одобрения более половины ревьюеров"
+                );
+            }
         }
+    }
 
-        // Проверка голосов ревьюеров
-        if (!taskReviewerService.isApprovedByMajority(task.getId())) {
-            throw new InvalidStateException(
-                    "Невозможно завершить задачу",
-                    "недостаточно одобрений от ревьюеров",
-                    "дождитесь одобрения более половины ревьюеров"
-            );
+    private boolean isApprovedByMajority(UUID taskId) {
+        List<TaskReviewer> reviewers = taskReviewerRepository.findByTaskId(taskId);
+        if (reviewers.isEmpty()) {
+            return true;
         }
+        long approvedCount = reviewers.stream()
+                .filter(tr -> tr.getStatus() == TaskReviewer.ReviewStatus.APPROVED)
+                .count();
+        return approvedCount * 2 > reviewers.size();
     }
 }
