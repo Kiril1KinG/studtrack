@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html th:replace="~{layout :: layout(content=~{::main})}"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<main>
+    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <span th:text="${task.title}">Название задачи</span>
+            <span class="badge ms-2"
+                  th:classappend="${task.priority == T(ru.diploma.studtrack.model.Task.Priority).HIGH} ? 'bg-danger' :
+                                   (${task.priority == T(ru.diploma.studtrack.model.Task.Priority).MEDIUM} ? 'bg-warning text-dark' : 'bg-secondary')"
+                  th:text="${task.priority}">PRIORITY</span>
+            <span class="badge bg-info text-dark ms-2" th:text="${task.status}">STATUS</span>
+        </h1>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#editTaskForm">
+                <i class="bi bi-pencil"></i> Редактировать
+            </button>
+            <a th:href="@{/projects/{id}(id=${task.project.id})}" class="btn btn-outline-secondary btn-sm">
+                ← К доске
+            </a>
+        </div>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="collapse mb-4" id="editTaskForm">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">Редактировать задачу</div>
+            <div class="card-body">
+                <form th:action="@{/tasks/{id}/update(id=${task.id})}" method="post">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-semibold">Название</label>
+                            <input type="text" name="title" class="form-control"
+                                   th:value="${task.title}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Приоритет</label>
+                            <select name="priority" class="form-select">
+                                <option th:each="p : ${priorities}"
+                                        th:value="${p}"
+                                        th:text="${p}"
+                                        th:selected="${p == task.priority}">PRIORITY</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Описание</label>
+                        <textarea name="description" class="form-control" rows="4"
+                                  th:text="${task.description}"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Дедлайн</label>
+                        <input type="date" name="deadline" class="form-control"
+                               th:value="${task.deadline}">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="reviewRequired" value="true"
+                                   class="form-check-input" id="editReviewRequired"
+                                   th:if="${isOwner || isCurrentUserAssignee}"
+                                   th:checked="${task.reviewRequired}">
+                            <label class="form-check-label" for="editReviewRequired">
+                                Требуется ревью
+                            </label>
+                        </div>
+                        <div th:if="${!(isOwner || isCurrentUserAssignee)}" class="small text-muted mt-1">
+                            Сейчас: <span th:text="${task.reviewRequired ? 'Да' : 'Нет'}">Нет</span>.
+                            Изменить может только владелец или исполнитель задачи.
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <button type="button" class="btn btn-secondary"
+                                data-bs-toggle="collapse" data-bs-target="#editTaskForm">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">Описание</div>
+                <div class="card-body">
+                    <p th:text="${task.description}" style="white-space: pre-wrap;" class="mb-0">Описание задачи</p>
+                    <p th:if="${task.description == null || task.description.isBlank()}" class="text-muted mb-0">Описание не указано</p>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Комментарии</div>
+                <div class="card-body">
+                    <form th:action="@{/tasks/{id}/comments(id=${task.id})}"
+                          method="post"
+                          th:attr="hx-post=@{/tasks/{id}/comments(id=${task.id})}"
+                          hx-target="#comments-list"
+                          hx-swap="afterbegin"
+                          hx-on::after-request="this.reset()">
+                        <div class="mb-2">
+                            <textarea name="content" class="form-control" rows="2"
+                                      placeholder="Написать комментарий..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
+                    </form>
+                    <hr>
+                    <div id="comments-list">
+                        <div th:replace="~{fragments/comments :: commentList(comments=${comments})}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4" th:if="${task.reviewRequired}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Раунды ревью</span>
+                    <span th:if="${canStartNewRound}">
+                        <button class="btn btn-sm btn-outline-primary" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#newRoundForm">
+                            + Новый раунд
+                        </button>
+                    </span>
+                    <span th:if="${isCurrentUserReviewer && !canStartNewRound}"
+                          class="small text-muted"
+                          title="Дождитесь завершения текущего раунда исполнителем">
+                        <i class="bi bi-lock"></i> Раунд не завершён
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div th:if="${isCurrentUserReviewer}" class="collapse mb-3" id="newRoundForm">
+                        <form th:action="@{/tasks/{id}/rounds(id=${task.id})}" method="post">
+                            <div class="mb-2">
+                                <label class="form-label">Комментарий к раунду</label>
+                                <textarea name="summaryComment" class="form-control" rows="2"
+                                          placeholder="Итог / цель этого раунда ревью..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">Создать раунд</button>
+                            <button type="button" class="btn btn-secondary btn-sm"
+                                    data-bs-toggle="collapse" data-bs-target="#newRoundForm">Отмена</button>
+                        </form>
+                    </div>
+
+                    <div th:if="${reviewRounds.isEmpty()}" class="text-muted">
+                        Раундов ревью пока нет.
+                    </div>
+                    <div th:each="round : ${reviewRounds}"
+                         th:classappend="${round.status != null && round.status.name() == 'COMPLETED'} ? 'border-success' :
+                                         (${round.status != null && round.status.name() == 'CANCELED'} ? 'border-danger' : 'border-secondary')"
+                         class="border rounded p-3 mb-3">
+
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">
+                                Раунд #<span th:text="${round.roundNumber}">1</span>
+                                <small class="text-muted ms-2">
+                                    <span th:text="${round.initiator.fullName}">Инициатор</span>
+                                    · <span th:text="${#temporals.format(round.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+                                </small>
+                            </h6>
+                            <span th:if="${round.status == null || round.status.name() == 'OPEN'}"
+                                  class="badge bg-warning text-dark">В процессе</span>
+                            <span th:if="${round.status != null && round.status.name() == 'COMPLETED'}"
+                                  class="badge bg-success">Завершён</span>
+                            <span th:if="${round.status != null && round.status.name() == 'CANCELED'}"
+                                  class="badge bg-danger">Отменён</span>
+                        </div>
+
+                        <p th:if="${round.summaryComment != null && !round.summaryComment.isBlank()}"
+                           class="text-muted small mb-2" th:text="${round.summaryComment}"></p>
+
+                        <div th:if="${round.changeRequests != null && !round.changeRequests.isEmpty()}">
+                            <p class="small fw-semibold mb-1">Замечания:</p>
+                            <ul class="list-group list-group-flush mb-2">
+                                <li th:each="cr : ${round.changeRequests}"
+                                    th:classappend="${cr.status.name() == 'RESOLVED'} ? 'list-group-item-success' : 'list-group-item-light'"
+                                    class="list-group-item px-2 py-2">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <div class="flex-grow-1">
+                                            <span th:text="${cr.content}">Замечание</span>
+                                            <small class="text-muted ms-1">— <span th:text="${cr.author.fullName}">Автор</span></small>
+
+                                            <div class="mt-2" x-data="{open: false}">
+                                                <button class="btn btn-link btn-sm p-0 text-secondary text-decoration-none"
+                                                        type="button"
+                                                        x-on:click="open = !open"
+                                                        th:attr="hx-get=@{/tasks/change-requests/{id}/comments(id=${cr.id})},hx-target='#cr-thread-' + ${cr.id}"
+                                                        hx-trigger="click once"
+                                                        hx-swap="innerHTML">
+                                                    <i class="bi bi-chat-dots"></i> Обсудить
+                                                </button>
+                                                <div class="mt-2" x-show="open" x-cloak th:id="'cr-thread-' + ${cr.id}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div th:if="${isCurrentUserAssignee}" class="flex-shrink-0">
+                                            <form th:if="${cr.status.name() == 'OPEN'}"
+                                                  th:action="@{/tasks/change-requests/{id}/resolve(id=${cr.id})}"
+                                                  method="post" class="d-inline">
+                                                <input type="hidden" name="taskId" th:value="${task.id}">
+                                                <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2">
+                                                    Пометить как выполненное
+                                                </button>
+                                            </form>
+                                            <form th:if="${cr.status.name() == 'RESOLVED'}"
+                                                  th:action="@{/tasks/change-requests/{id}/reopen(id=${cr.id})}"
+                                                  method="post" class="d-inline">
+                                                <input type="hidden" name="taskId" th:value="${task.id}">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-2">
+                                                    Пометить как невыполненное
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div th:if="${isCurrentUserReviewer && (round.status == null || round.status.name() == 'OPEN')}">
+                            <button class="btn btn-sm btn-outline-secondary" type="button"
+                                    th:attr="data-bs-target='#crForm-' + ${round.id}"
+                                    data-bs-toggle="collapse">
+                                + Замечание
+                            </button>
+                            <div class="collapse mt-2" th:id="'crForm-' + ${round.id}">
+                                <form th:action="@{/tasks/{taskId}/rounds/{roundId}/change-requests(taskId=${task.id}, roundId=${round.id})}"
+                                      method="post">
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" name="content" class="form-control"
+                                               placeholder="Текст замечания..." required>
+                                        <button type="submit" class="btn btn-primary">Добавить</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div th:if="${isCurrentUserAssignee && (round.status == null || round.status.name() == 'OPEN')}"
+                             class="mt-2">
+                            <form th:action="@{/tasks/{taskId}/rounds/{roundId}/complete(taskId=${task.id}, roundId=${round.id})}"
+                                  method="post">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="bi bi-check2-all"></i> Завершить раунд
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">История изменений</div>
+                <div class="card-body"
+                     id="task-history-block"
+                     th:attr="hx-get=@{/tasks/{id}/history(id=${task.id})}"
+                     hx-trigger="load, every 10s"
+                     hx-swap="innerHTML">
+                    <div th:replace="~{fragments/task-history :: historyList(
+                            historyEntries=${historyEntries},
+                            historyMessageById=${historyMessageById})}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">Статус</div>
+                <div class="card-body">
+                    <form th:action="@{/tasks/{id}/status(id=${task.id})}" method="post">
+                        <select name="status" class="form-select" onchange="this.form.submit()">
+                            <option th:each="s : ${statuses}"
+                                    th:value="${s}"
+                                    th:text="${s}"
+                                    th:selected="${s == task.status}">STATUS</option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Исполнители</span>
+                    <button th:if="${isOwner || isCurrentUserAssignee}" class="btn btn-sm btn-outline-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#addAssigneeModal">
+                        + Добавить
+                    </button>
+                </div>
+                <div class="card-body" id="assignees-list">
+                    <div th:replace="~{fragments/task-assignees :: assigneeList(
+                            taskId=${task.id},
+                            assignees=${assignees},
+                            currentUserId=${currentUser.id},
+                            isOwner=${isOwner},
+                            isCurrentUserAssignee=${isCurrentUserAssignee})}"></div>
+
+                    <form th:if="${!isCurrentUserAssignee}"
+                          th:action="@{/tasks/{id}/assignees(id=${task.id})}"
+                          method="post"
+                          th:attr="hx-post=@{/tasks/{id}/assignees(id=${task.id})}"
+                          hx-target="#assignees-list"
+                          hx-swap="outerHTML"
+                          class="mt-2">
+                        <input type="hidden" name="assigneeId" th:value="${currentUser.id}">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
+                            <i class="bi bi-person-check"></i> Назначить себя
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4" th:if="${task.reviewRequired}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Ревьюеры</span>
+                    <button th:if="${isOwner || isCurrentUserAssignee}"
+                            class="btn btn-sm btn-outline-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#addReviewerModal">
+                        + Добавить
+                    </button>
+                </div>
+                <div class="card-body" id="reviewers-list">
+                    <div th:replace="~{fragments/task-reviewers :: reviewerList(
+                            taskId=${task.id},
+                            reviewers=${reviewers},
+                            currentUserId=${currentUser.id},
+                            isCurrentUserAssignee=${isCurrentUserAssignee},
+                            isOwner=${isOwner})}"></div>
+
+                    <form th:if="${!isCurrentUserReviewer && !isCurrentUserAssignee}"
+                          th:action="@{/tasks/{id}/reviewers(id=${task.id})}"
+                          method="post"
+                          th:attr="hx-post=@{/tasks/{id}/reviewers(id=${task.id})}"
+                          hx-target="#reviewers-list"
+                          hx-swap="outerHTML"
+                          hx-on::after-request="window.location.reload()"
+                          class="mt-2">
+                        <input type="hidden" name="reviewerId" th:value="${currentUser.id}">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
+                            <i class="bi bi-person-plus"></i> Добавить себя ревьюером
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Дедлайн</div>
+                <div class="card-body">
+                    <div th:if="${task.deadline != null}"
+                         th:classappend="${task.deadline.isBefore(T(java.time.LocalDate).now()) && task.status != T(ru.diploma.studtrack.model.Task.TaskStatus).DONE} ? 'text-danger fw-semibold' : ''">
+                        <i class="bi bi-calendar-event me-1"></i>
+                        <span th:text="${#temporals.format(task.deadline, 'dd.MM.yyyy')}"></span>
+                        <span th:if="${task.deadline.isBefore(T(java.time.LocalDate).now()) && task.status != T(ru.diploma.studtrack.model.Task.TaskStatus).DONE}"
+                              class="badge bg-danger ms-2">Просрочено</span>
+                    </div>
+                    <div th:unless="${task.deadline != null}" class="text-muted">
+                        Не указан
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Проект</div>
+                <div class="card-body">
+                    <a th:href="@{/projects/{id}(id=${task.project.id})}" th:text="${task.project.name}">Проект</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/modals :: addReviewerModal(
+            taskId=${task.id},
+            projectMembers=${projectMembers},
+            currentUserId=${currentUser.id},
+            assigneeIds=${assignees != null ? assignees.![user.id] : null})}"></div>
+    <div th:replace="~{fragments/modals :: addAssigneeModal(
+            taskId=${task.id},
+            projectMembers=${projectMembers},
+            currentUserId=${currentUser.id})}"></div>
+</main>
+</body>
+</html>

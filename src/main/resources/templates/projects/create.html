@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html th:replace="~{layout :: layout(content=~{::main})}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main>
+    <h2>Создание проекта</h2>
+    <form method="post" th:action="@{/projects/create}">
+        <div class="mb-3">
+            <label>Название</label>
+            <input type="text" name="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Описание</label>
+            <textarea name="description" class="form-control"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Создать</button>
+    </form>
+</main>
+</body>
+</html>

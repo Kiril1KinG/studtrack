@@ -1,0 +1,61 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <th:block th:fragment="unreadBadge">
+        <span id="notification-badge"
+              class="badge rounded-pill bg-danger notification-badge"
+              hx-get="/notifications/unread-count"
+              hx-trigger="every 15s"
+              hx-swap="outerHTML"
+              th:if="${unreadCount > 0}"
+              th:text="${unreadCount}">0</span>
+        <span id="notification-badge"
+              hx-get="/notifications/unread-count"
+              hx-trigger="every 15s"
+              hx-swap="outerHTML"
+              th:if="${unreadCount == 0}"></span>
+    </th:block>
+
+    <div th:fragment="dropdownList" class="notification-dropdown-content">
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+            <span class="fw-semibold">Уведомления</span>
+            <button class="btn btn-sm btn-link p-0"
+                    th:if="${unreadCount > 0}"
+                    hx-post="/notifications/read-all"
+                    hx-target="#notification-dropdown"
+                    hx-swap="innerHTML"
+                    hx-on::after-request="htmx.ajax('GET','/notifications/unread-count',{target:'#notification-badge',swap:'outerHTML'})">
+                Прочитать все
+            </button>
+        </div>
+
+        <div th:if="${notifications == null || notifications.isEmpty()}" class="px-3 py-3 text-muted small">
+            Новых уведомлений нет
+        </div>
+
+        <div th:if="${notifications != null && !notifications.isEmpty()}" class="list-group list-group-flush">
+            <div th:each="n : ${notifications}"
+                 class="list-group-item py-2"
+                 th:classappend="${!n.read} ? 'list-group-item-light'">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <a class="small fw-semibold text-dark text-decoration-none flex-grow-1"
+                       th:href="@{${n.targetUrl}}"
+                       th:text="${n.message}">message</a>
+                    <small class="text-muted"
+                           th:text="${#temporals.format(n.createdAt, 'dd.MM HH:mm')}">time</small>
+                </div>
+                <div class="text-end mt-1" th:if="${!n.read}">
+                    <button class="btn btn-sm btn-link p-0"
+                            th:hx-post="@{/notifications/{id}/read(id=${n.id})}"
+                            hx-target="#notification-dropdown"
+                            hx-swap="innerHTML"
+                            hx-on::after-request="htmx.ajax('GET','/notifications/unread-count',{target:'#notification-badge',swap:'outerHTML'})">
+                        Отметить прочитанным
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-top px-3 py-2 text-end">
+            <a class="small text-decoration-none" th:href="@{/notifications}">Все уведомления</a>
+        </div>
+    </div>
+</div>

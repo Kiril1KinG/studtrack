@@ -1,0 +1,53 @@
+<div th:fragment="taskCard(task, reviewStateByTaskId, reviewStatsByTaskId)"
+     class="card mb-2 task-card"
+     th:with="reviewState=${reviewStateByTaskId != null ? reviewStateByTaskId.get(task.id) : 'NONE'},
+              reviewStats=${reviewStatsByTaskId != null ? reviewStatsByTaskId.get(task.id) : null}"
+     th:classappend="${task.deadline != null && task.deadline.isBefore(T(java.time.LocalDate).now()) && task.status != T(ru.diploma.studtrack.model.Task.TaskStatus).DONE} ? ' border-danger' : ''"
+     th:attr="data-task-id=${task.id},data-project-id=${task.project.id},data-review-locked=${reviewState == 'LOCKED'}"
+     th:style="${reviewState == 'LOCKED'} ? 'cursor: not-allowed;' : 'cursor: grab;'"
+     xmlns:th="http://www.thymeleaf.org">
+    <div class="card-body p-2">
+        <div class="d-flex justify-content-between align-items-start">
+            <h6 class="card-title mb-1">
+                <a th:href="@{/tasks/{id}(id=${task.id})}" th:text="${task.title}">Заголовок</a>
+            </h6>
+            <span class="badge"
+                  th:classappend="${task.priority == T(ru.diploma.studtrack.model.Task.Priority).HIGH} ? 'bg-danger' :
+                                   (${task.priority == T(ru.diploma.studtrack.model.Task.Priority).MEDIUM} ? 'bg-warning text-dark' : 'bg-secondary')"
+                  th:text="${task.priority}">PRIORITY</span>
+        </div>
+
+        <div th:if="${task.assignees != null && !task.assignees.isEmpty()}" class="small text-muted mt-1">
+            <i class="bi bi-person-fill"></i>
+            <span th:text="${task.assignees.size() == 1 ? task.assignees.iterator().next().user.fullName : ('Исполнителей: ' + task.assignees.size())}">Исполнитель</span>
+        </div>
+        <div th:unless="${task.assignees != null && !task.assignees.isEmpty()}" class="small text-muted mt-1">
+            <i class="bi bi-person-plus"></i> Исполнитель не назначен
+        </div>
+
+        <div th:if="${task.deadline != null}" class="small mt-1"
+             th:classappend="${task.deadline.isBefore(T(java.time.LocalDate).now()) && task.status != T(ru.diploma.studtrack.model.Task.TaskStatus).DONE} ? 'text-danger fw-semibold' : 'text-muted'">
+            <i class="bi bi-calendar-event"></i>
+            <span th:text="${#temporals.format(task.deadline, 'dd.MM.yyyy')}"></span>
+            <span th:if="${task.deadline.isBefore(T(java.time.LocalDate).now()) && task.status != T(ru.diploma.studtrack.model.Task.TaskStatus).DONE}"
+                  class="ms-1">(просрочено)</span>
+        </div>
+
+        <div th:if="${task.reviewRequired}" class="small text-info mt-1">
+            <i class="bi bi-check-circle"></i> Требуется ревью
+        </div>
+        <div th:if="${reviewState == 'LOCKED'}" class="small text-warning mt-1 fw-semibold">
+            <i class="bi bi-lock-fill"></i> На проверке
+        </div>
+        <div th:if="${reviewState == 'READY'}" class="small text-success mt-1 fw-semibold">
+            <i class="bi bi-check2-circle"></i> Можно в DONE
+        </div>
+        <div th:if="${task.reviewRequired && reviewStats != null}" class="small mt-1">
+            <span class="text-success fw-semibold" th:text="${reviewStats.approved()}">0</span>
+            <span class="text-muted">/</span>
+            <span class="text-danger fw-semibold" th:text="${reviewStats.rejected()}">0</span>
+            <span class="text-muted">/</span>
+            <span class="text-secondary fw-semibold" th:text="${reviewStats.pending()}">0</span>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,47 @@
+<div th:fragment="reviewerList(taskId, reviewers, currentUserId, isCurrentUserAssignee, isOwner)" id="reviewers-list" xmlns:th="http://www.thymeleaf.org">
+    <th:block th:if="${reviewers.isEmpty()}">
+        <p class="text-muted">Ревьюеры не назначены</p>
+    </th:block>
+    <ul class="list-group">
+        <li th:each="reviewer : ${reviewers}" class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <span th:text="${reviewer.user.fullName}">Имя</span>
+                <span class="badge ms-2"
+                      th:classappend="${reviewer.status == T(ru.diploma.studtrack.model.TaskReviewer.ReviewStatus).APPROVED} ? 'bg-success' :
+                                       (${reviewer.status == T(ru.diploma.studtrack.model.TaskReviewer.ReviewStatus).REJECTED} ? 'bg-danger' : 'bg-secondary')"
+                      th:text="${reviewer.status}">STATUS</span>
+            </div>
+            <div th:if="${reviewer.user.id == currentUserId}">
+                <form th:action="@{/tasks/{taskId}/reviewers/{reviewerId}/submit(taskId=${taskId}, reviewerId=${reviewer.user.id})}"
+                      method="post"
+                      th:attr="hx-post=@{/tasks/{taskId}/reviewers/{reviewerId}/submit(taskId=${taskId}, reviewerId=${reviewer.user.id})}"
+                      hx-target="#reviewers-list"
+                      hx-swap="outerHTML"
+                      class="d-inline">
+                    <input type="hidden" name="status" value="APPROVED">
+                    <button type="submit" class="btn btn-sm btn-outline-success" title="Одобрить">✅</button>
+                </form>
+                <form th:action="@{/tasks/{taskId}/reviewers/{reviewerId}/submit(taskId=${taskId}, reviewerId=${reviewer.user.id})}"
+                      method="post"
+                      th:attr="hx-post=@{/tasks/{taskId}/reviewers/{reviewerId}/submit(taskId=${taskId}, reviewerId=${reviewer.user.id})}"
+                      hx-target="#reviewers-list"
+                      hx-swap="outerHTML"
+                      class="d-inline">
+                    <input type="hidden" name="status" value="REJECTED">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Отклонить">❌</button>
+                </form>
+            </div>
+            <form th:if="${isOwner || isCurrentUserAssignee || reviewer.user.id == currentUserId}"
+                  th:action="@{/tasks/{taskId}/reviewers/{reviewerId}(taskId=${taskId}, reviewerId=${reviewer.user.id})}"
+                  method="post"
+                  th:attr="hx-delete=@{/tasks/{taskId}/reviewers/{reviewerId}(taskId=${taskId}, reviewerId=${reviewer.user.id})}"
+                  hx-target="#reviewers-list"
+                  hx-swap="outerHTML"
+                  class="d-inline ms-2">
+                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Удалить из ревьюеров">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </form>
+        </li>
+    </ul>
+</div>

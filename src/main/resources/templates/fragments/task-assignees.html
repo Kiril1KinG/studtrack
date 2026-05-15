@@ -1,0 +1,23 @@
+<div th:fragment="assigneeList(taskId, assignees, currentUserId, isOwner, isCurrentUserAssignee)"
+     id="assignees-list"
+     xmlns:th="http://www.thymeleaf.org">
+    <th:block th:if="${assignees.isEmpty()}">
+        <p class="text-muted">Исполнители не назначены</p>
+    </th:block>
+    <ul class="list-group">
+        <li th:each="assignee : ${assignees}" class="list-group-item d-flex justify-content-between align-items-center">
+            <span th:text="${assignee.user.fullName}">Имя</span>
+            <form th:if="${isOwner || isCurrentUserAssignee || assignee.user.id == currentUserId}"
+                  th:action="@{/tasks/{taskId}/assignees/{assigneeId}(taskId=${taskId}, assigneeId=${assignee.user.id})}"
+                  method="post"
+                  th:attr="hx-delete=@{/tasks/{taskId}/assignees/{assigneeId}(taskId=${taskId}, assigneeId=${assignee.user.id})}"
+                  hx-target="#assignees-list"
+                  hx-swap="outerHTML"
+                  class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Удалить исполнителя">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </form>
+        </li>
+    </ul>
+</div>

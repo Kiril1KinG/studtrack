@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="kanbanBoard(project, tasksByStatus, statuses, reviewStateByTaskId, reviewStatsByTaskId)">
+    <div class="row flex-nowrap overflow-auto" id="kanban-board">
+        <th:block th:each="status : ${statuses}">
+            <div class="col" style="min-width: 280px;">
+                <div class="card">
+                    <div class="card-header" th:text="${status}">Статус</div>
+                    <div class="card-body p-2">
+                        <div class="task-list" th:attr="data-status=${status}" th:id="'col-' + ${status}">
+                            <th:block th:if="${tasksByStatus.containsKey(status)}">
+                                <th:block th:each="task : ${tasksByStatus.get(status)}">
+                                    <div th:replace="~{fragments/task-card :: taskCard(task=${task}, reviewStateByTaskId=${reviewStateByTaskId}, reviewStatsByTaskId=${reviewStatsByTaskId})}"></div>
+                                </th:block>
+                            </th:block>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </th:block>
+    </div>
+</th:block>
+</body>
+</html>

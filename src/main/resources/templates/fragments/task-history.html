@@ -1,0 +1,58 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <div th:fragment="historyList(historyEntries, historyMessageById)">
+        <div th:if="${historyEntries == null || historyEntries.isEmpty()}" class="text-muted small">
+            Изменений пока нет.
+        </div>
+
+        <ul th:if="${historyEntries != null && !historyEntries.isEmpty()}" class="list-group list-group-flush">
+            <li th:each="entry, iter : ${historyEntries}" th:if="${iter.index < 5}" class="list-group-item px-0">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="small">
+                        <span class="fw-semibold" th:text="${entry.actor.fullName}">Пользователь</span>
+                        <span th:text="${historyMessageById[entry.id]}">выполнил(а) действие</span>
+                    </div>
+                    <small class="text-muted"
+                           th:text="${#temporals.format(entry.createdAt, 'dd.MM.yyyy HH:mm')}">time</small>
+                </div>
+            </li>
+        </ul>
+
+        <div th:if="${historyEntries != null && #lists.size(historyEntries) > 5}" class="mt-2">
+            <button class="btn btn-sm btn-outline-secondary"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#task-history-more"
+                    aria-expanded="false"
+                    aria-controls="task-history-more">
+                Показать еще
+            </button>
+        </div>
+
+        <div th:if="${historyEntries != null && #lists.size(historyEntries) > 5}"
+             id="task-history-more"
+             class="collapse">
+            <ul class="list-group list-group-flush mt-2">
+                <li th:each="entry, iter : ${historyEntries}" th:if="${iter.index >= 5}" class="list-group-item px-0">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div class="small">
+                            <span class="fw-semibold" th:text="${entry.actor.fullName}">Пользователь</span>
+                            <span th:text="${historyMessageById[entry.id]}">выполнил(а) действие</span>
+                        </div>
+                        <small class="text-muted"
+                               th:text="${#temporals.format(entry.createdAt, 'dd.MM.yyyy HH:mm')}">time</small>
+                    </div>
+                </li>
+            </ul>
+            <div class="mt-2">
+                <button class="btn btn-sm btn-outline-secondary"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#task-history-more"
+                        aria-expanded="true"
+                        aria-controls="task-history-more">
+                    Свернуть
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
