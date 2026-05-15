@@ -10,7 +10,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "comments")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -35,6 +36,10 @@ public class Comment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "round_id")
     private TaskReviewRound round;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "change_request_id")
+    private ChangeRequest changeRequest;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

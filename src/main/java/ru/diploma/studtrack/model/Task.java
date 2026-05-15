@@ -13,14 +13,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,7 +28,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "tasks")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -59,12 +58,11 @@ public class Task {
     @Column(nullable = false)
     private Priority priority;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assignee_id")
-    private User assignee;
-
     @Column(name = "review_required", nullable = false)
     private boolean reviewRequired;
+
+    @Column(name = "deadline")
+    private LocalDate deadline;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -82,6 +80,9 @@ public class Task {
     private Set<TaskReviewer> reviewers = new HashSet<>();
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<TaskAssignee> assignees = new HashSet<>();
+
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("roundNumber ASC")
     private List<TaskReviewRound> reviewRounds = new ArrayList<>();
 
@@ -94,5 +95,12 @@ public class Task {
 
     public enum Priority {
         LOW, MEDIUM, HIGH
+    }
+
+    public User getPrimaryAssignee() {
+        return assignees.stream()
+                .map(TaskAssignee::getUser)
+                .findFirst()
+                .orElse(null);
     }
 }

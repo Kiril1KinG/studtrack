@@ -42,8 +42,11 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-                .requestMatchers("/auth/**").permitAll() // страницы входа/регистрации
+                .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/api/**").authenticated()
+                .requestMatchers("/projects/**").authenticated()
+                .requestMatchers("/tasks/**").authenticated()
+                .requestMatchers("/profile/**").authenticated()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
@@ -58,7 +61,7 @@ public class SecurityConfig {
                 .permitAll()
             )
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/**") // если REST API используется с фронтендом, можно отключить для простоты
+                .ignoringRequestMatchers("/api/**")
             );
 
         return http.build();

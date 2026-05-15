@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html th:replace="~{layout :: layout(content=~{::main})}"
+      xmlns:th="http://www.thymeleaf.org">
+<body>
+<main>
+    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Мои задачи</h1>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            <form method="get" th:action="@{/tasks/my}" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm mb-1">Приоритет</label>
+                    <select name="priority" class="form-select form-select-sm">
+                        <option value="" th:selected="${selectedPriority == null}">Все приоритеты</option>
+                        <option th:each="p : ${priorities}"
+                                th:value="${p}"
+                                th:text="${p}"
+                                th:selected="${selectedPriority == p}">PRIORITY</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm mb-1">Дедлайн</label>
+                    <select name="deadline" class="form-select form-select-sm">
+                        <option value="" th:selected="${selectedDeadline == null}">Любой</option>
+                        <option value="overdue" th:selected="${selectedDeadline == 'overdue'}">Просроченные</option>
+                        <option value="today" th:selected="${selectedDeadline == 'today'}">Сегодня</option>
+                        <option value="week" th:selected="${selectedDeadline == 'week'}">На этой неделе</option>
+                    </select>
+                </div>
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+                    <a th:href="@{/tasks/my}" class="btn btn-outline-secondary btn-sm ms-1">Сбросить</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="myTasksTabs">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-todo">
+                К выполнению
+                <span class="badge bg-primary ms-1" th:text="${assignedTasks.size()}">0</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-review">
+                К ревью
+                <span class="badge bg-warning text-dark ms-1" th:text="${pendingReviews.size()}">0</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-todo">
+            <div th:if="${assignedTasks.isEmpty()}" class="text-muted py-3 text-center">
+                <i class="bi bi-check2-all fs-3 d-block mb-2"></i>
+                Нет задач к выполнению
+            </div>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                <div th:each="task : ${assignedTasks}" class="col">
+                    <div class="card h-100"
+                         th:classappend="${task.deadline != null && task.deadline.isBefore(T(java.time.LocalDate).now())} ? ' border-danger' : ''">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0">
+                                    <a th:href="@{/tasks/{id}(id=${task.id})}" th:text="${task.title}">Задача</a>
+                                </h6>
+                                <span class="badge ms-2"
+                                      th:classappend="${task.priority == T(ru.diploma.studtrack.model.Task.Priority).HIGH} ? 'bg-danger' :
+                                                       (${task.priority == T(ru.diploma.studtrack.model.Task.Priority).MEDIUM} ? 'bg-warning text-dark' : 'bg-secondary')"
+                                      th:text="${task.priority}">PRIORITY</span>
+                            </div>
+                            <div class="small text-muted mb-1">
+                                <a th:href="@{/projects/{id}(id=${task.project.id})}" th:text="${task.project.name}"
+                                   class="text-decoration-none text-muted">Проект</a>
+                            </div>
+                            <span class="badge bg-info text-dark" th:text="${task.status}">STATUS</span>
+                            <div th:if="${task.deadline != null}" class="small mt-2"
+                                 th:classappend="${task.deadline.isBefore(T(java.time.LocalDate).now())} ? 'text-danger fw-semibold' : 'text-muted'">
+                                <i class="bi bi-calendar-event me-1"></i>
+                                <span th:text="${#temporals.format(task.deadline, 'dd.MM.yyyy')}"></span>
+                                <span th:if="${task.deadline.isBefore(T(java.time.LocalDate).now())}">(просрочено)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-review">
+            <div th:if="${pendingReviews.isEmpty()}" class="text-muted py-3 text-center">
+                <i class="bi bi-eye fs-3 d-block mb-2"></i>
+                Нет задач к ревью
+            </div>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                <div th:each="reviewer : ${pendingReviews}" class="col">
+                    <div class="card h-100"
+                         th:classappend="${reviewer.task.deadline != null && reviewer.task.deadline.isBefore(T(java.time.LocalDate).now())} ? ' border-danger' : ''">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0">
+                                    <a th:href="@{/tasks/{id}(id=${reviewer.task.id})}" th:text="${reviewer.task.title}">Задача</a>
+                                </h6>
+                                <span class="badge ms-2"
+                                      th:classappend="${reviewer.task.priority == T(ru.diploma.studtrack.model.Task.Priority).HIGH} ? 'bg-danger' :
+                                                       (${reviewer.task.priority == T(ru.diploma.studtrack.model.Task.Priority).MEDIUM} ? 'bg-warning text-dark' : 'bg-secondary')"
+                                      th:text="${reviewer.task.priority}">PRIORITY</span>
+                            </div>
+                            <div class="small text-muted mb-1">
+                                <a th:href="@{/projects/{id}(id=${reviewer.task.project.id})}"
+                                   th:text="${reviewer.task.project.name}"
+                                   class="text-decoration-none text-muted">Проект</a>
+                            </div>
+                            <div class="small text-muted mb-1">
+                                Исполнитель:
+                                <span th:if="${reviewer.task.assignees != null && !reviewer.task.assignees.isEmpty()}"
+                                      th:text="${reviewer.task.assignees.size() == 1 ? reviewer.task.assignees.iterator().next().user.fullName : ('исполнителей: ' + reviewer.task.assignees.size())}">—</span>
+                                <span th:unless="${reviewer.task.assignees != null && !reviewer.task.assignees.isEmpty()}" class="fst-italic">не назначен</span>
+                            </div>
+                            <span class="badge bg-warning text-dark">Ожидает ревью</span>
+                            <div th:if="${reviewer.task.deadline != null}" class="small mt-2"
+                                 th:classappend="${reviewer.task.deadline.isBefore(T(java.time.LocalDate).now())} ? 'text-danger fw-semibold' : 'text-muted'">
+                                <i class="bi bi-calendar-event me-1"></i>
+                                <span th:text="${#temporals.format(reviewer.task.deadline, 'dd.MM.yyyy')}"></span>
+                                <span th:if="${reviewer.task.deadline.isBefore(T(java.time.LocalDate).now())}">(просрочено)</span>
+                            </div>
+                        </div>
+                        <div class="card-footer py-2">
+                            <a th:href="@{/tasks/{id}(id=${reviewer.task.id})}"
+                               class="btn btn-sm btn-outline-primary w-100">
+                                <i class="bi bi-eye"></i> Перейти к задаче
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

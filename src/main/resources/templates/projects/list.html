@@ -9,13 +9,15 @@
         </div>
     </div>
 
-    <div class="row">
-        <th:block th:if="${projects.isEmpty()}">
-            <div class="col-12">
-                <div class="alert alert-info">У вас пока нет проектов. <a href="/projects/create">Создайте первый</a></div>
+    <div th:if="${projects == null || projects.isEmpty()}" class="row">
+        <div class="col-12">
+            <div class="alert alert-info">
+                У вас пока нет проектов. <a href="/projects/create">Создайте первый</a>
             </div>
-        </th:block>
+        </div>
+    </div>
 
+    <div th:if="${projects != null && !projects.isEmpty()}" class="row">
         <div th:each="project : ${projects}" class="col-md-4 mb-3">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">

@@ -9,7 +9,29 @@
     <div class="w-100"></div>
     <div class="navbar-nav">
         <div sec:authorize="isAuthenticated()" class="nav-item text-nowrap d-flex align-items-center">
-            <span class="nav-link px-3" sec:authentication="name">user@example.com</span>
+            <div class="dropdown me-2 position-relative">
+                <button class="btn btn-link nav-link px-2 text-white position-relative notification-bell-btn"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        aria-label="Уведомления">
+                    <i class="bi bi-bell fs-5"></i>
+                    <span id="notification-badge"
+                          hx-get="/notifications/unread-count"
+                          hx-trigger="load, every 15s"
+                          hx-swap="outerHTML"></span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end p-0 shadow border"
+                     style="min-width:360px; position:absolute; right:0; left:auto; top:100%;">
+                    <div id="notification-dropdown"
+                         hx-get="/notifications/dropdown"
+                         hx-trigger="load, every 15s"
+                         hx-swap="innerHTML">
+                        <div class="px-3 py-3 text-muted small">Загрузка...</div>
+                    </div>
+                </div>
+            </div>
+            <a class="nav-link px-3" th:href="@{/profile}" sec:authentication="name">user@example.com</a>
             <form th:action="@{/auth/logout}" method="post" class="d-inline">
                 <button type="submit" class="btn btn-sm btn-outline-light me-2">Выйти</button>
             </form>

@@ -23,6 +23,7 @@ public class TaskResponse {
     private Task.TaskStatus status;
     private Task.Priority priority;
     private UserResponse assignee;
+    private List<UserResponse> assignees;
     private boolean reviewRequired;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -12,5 +12,7 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
 
     List<Comment> findByTaskIdOrderByCreatedAtAsc(UUID taskId);
 
+    List<Comment> findByChangeRequestIdOrderByCreatedAtAsc(UUID changeRequestId);
+
     void deleteByTaskId(UUID taskId);
 }

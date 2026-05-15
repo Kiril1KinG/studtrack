@@ -11,10 +11,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "change_requests")
-@Data
-@Builder
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ChangeRequest {
 
     @Id
@@ -51,6 +52,7 @@ public class ChangeRequest {
 
     public enum ChangeRequestStatus {
         OPEN,
-        RESOLVED
+        RESOLVED,
+        REJECTED
     }
 }

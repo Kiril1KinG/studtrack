@@ -5,10 +5,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.diploma.studtrack.exception.AccessDeniedException;
 import ru.diploma.studtrack.exception.NotFoundException;
+import ru.diploma.studtrack.model.ChangeRequest;
 import ru.diploma.studtrack.model.Comment;
 import ru.diploma.studtrack.model.Task;
 import ru.diploma.studtrack.model.TaskReviewRound;
 import ru.diploma.studtrack.model.User;
+import ru.diploma.studtrack.repository.ChangeRequestRepository;
 import ru.diploma.studtrack.repository.CommentRepository;
 
 import java.util.List;
@@ -20,13 +22,19 @@ import java.util.UUID;
 public class CommentService {
 
     private final CommentRepository commentRepository;
+    private final ChangeRequestRepository changeRequestRepository;
     private final TaskService taskService;
     private final UserService userService;
     private final ProjectService projectService;
     private final TaskReviewRoundService roundService;
+    private final NotificationService notificationService;
 
     public List<Comment> getByTask(UUID taskId) {
         return commentRepository.findByTaskIdOrderByCreatedAtAsc(taskId);
+    }
+
+    public List<Comment> getByChangeRequest(UUID changeRequestId) {
+        return commentRepository.findByChangeRequestIdOrderByCreatedAtAsc(changeRequestId);
     }
 
     public Comment findById(UUID id) {
@@ -48,7 +56,9 @@ public class CommentService {
                 .round(null) // Общий комментарий к задаче
                 .build();
 
-        return commentRepository.save(comment);
+        Comment saved = commentRepository.save(comment);
+        notificationService.notifyCommentAdded(saved, currentUser);
+        return saved;
     }
 
     @Transactional
@@ -66,7 +76,31 @@ public class CommentService {
                 .round(round)
                 .build();
 
-        return commentRepository.save(comment);
+        Comment saved = commentRepository.save(comment);
+        notificationService.notifyCommentAdded(saved, currentUser);
+        return saved;
+    }
+
+    @Transactional
+    public Comment addCommentToChangeRequest(UUID changeRequestId, String content) {
+        ChangeRequest cr = changeRequestRepository.findById(changeRequestId)
+                .orElseThrow(() -> new NotFoundException("Замечание", changeRequestId));
+        Task task = cr.getRound().getTask();
+        projectService.checkMembership(task.getProject().getId());
+
+        User currentUser = userService.getCurrentUser();
+
+        Comment comment = Comment.builder()
+                .task(task)
+                .author(currentUser)
+                .content(content)
+                .round(cr.getRound())
+                .changeRequest(cr)
+                .build();
+
+        Comment saved = commentRepository.save(comment);
+        notificationService.notifyCommentAdded(saved, currentUser);
+        return saved;
     }
 
     @Transactional

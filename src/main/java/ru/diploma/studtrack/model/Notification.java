@@ -10,24 +10,25 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "task_reviewers",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"task_id", "user_id"}))
+@Table(name = "notifications")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskReviewer {
+public class Notification {
 
     @Id
     @GeneratedValue
@@ -35,31 +36,37 @@ public class TaskReviewer {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id", nullable = false)
-    private Task task;
+    @JoinColumn(name = "recipient_id", nullable = false)
+    private User recipient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "actor_id")
+    private User actor;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ReviewStatus status;
+    @Column(nullable = false, length = 40)
+    private NotificationType type;
 
-    @Column(columnDefinition = "TEXT")
-    private String comment;
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String message;
+
+    @Column(name = "target_url", length = 500)
+    private String targetUrl;
+
+    @Column(name = "is_read", nullable = false)
+    @Builder.Default
+    private boolean read = false;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    public enum ReviewStatus {
-        PENDING,
-        APPROVED,
-        REJECTED
+    public enum NotificationType {
+        PROJECT_INVITATION,
+        TASK_ASSIGNED,
+        REVIEWER_ASSIGNED,
+        REVIEW_RECHECK,
+        CHANGE_REQUEST_CREATED,
+        COMMENT_ADDED
     }
 }

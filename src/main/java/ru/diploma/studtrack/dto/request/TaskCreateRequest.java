@@ -7,8 +7,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import ru.diploma.studtrack.model.Task;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
@@ -30,4 +32,7 @@ public class TaskCreateRequest {
     private boolean reviewRequired;
 
     private UUID assigneeId;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate deadline;
 }

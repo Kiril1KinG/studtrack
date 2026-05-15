@@ -12,7 +12,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "task_review_rounds")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -41,6 +42,11 @@ public class TaskReviewRound {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private RoundStatus status = RoundStatus.OPEN;
+
     @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("createdAt ASC")
     private List<Comment> comments = new ArrayList<>();
@@ -48,4 +54,10 @@ public class TaskReviewRound {
     @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("createdAt ASC")
     private List<ChangeRequest> changeRequests = new ArrayList<>();
+
+    public enum RoundStatus {
+        OPEN,
+        COMPLETED,
+        CANCELED
+    }
 }

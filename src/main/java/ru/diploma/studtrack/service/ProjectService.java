@@ -10,8 +10,10 @@ import ru.diploma.studtrack.exception.NotFoundException;
 import ru.diploma.studtrack.model.Project;
 import ru.diploma.studtrack.model.ProjectMember;
 import ru.diploma.studtrack.model.User;
+import ru.diploma.studtrack.repository.TaskAssigneeRepository;
 import ru.diploma.studtrack.repository.ProjectMemberRepository;
 import ru.diploma.studtrack.repository.ProjectRepository;
+import ru.diploma.studtrack.repository.TaskReviewerRepository;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,7 +25,10 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final TaskAssigneeRepository taskAssigneeRepository;
+    private final TaskReviewerRepository taskReviewerRepository;
     private final UserService userService;
+    private final NotificationService notificationService;
 
     public List<Project> getMyProjects() {
         UUID currentUserId = userService.getCurrentUserId();
@@ -69,8 +74,6 @@ public class ProjectService {
         projectRepository.delete(project);
     }
 
-    // Управление участниками
-
     public List<ProjectMember> getMembers(UUID projectId) {
         return projectMemberRepository.findByProjectId(projectId);
     }
@@ -87,6 +90,7 @@ public class ProjectService {
     public ProjectMember addMember(UUID projectId, UUID userId) {
         Project project = findById(projectId);
         User user = userService.findById(userId);
+        User currentUser = userService.getCurrentUser();
         checkOwnership(project);
 
         if (isMember(projectId, userId)) {
@@ -97,7 +101,9 @@ public class ProjectService {
                 .project(project)
                 .user(user)
                 .build();
-        return projectMemberRepository.save(member);
+        ProjectMember savedMember = projectMemberRepository.save(member);
+        notificationService.notifyProjectInvitation(user, currentUser, project.getId(), project.getName());
+        return savedMember;
     }
 
     @Transactional
@@ -109,6 +115,8 @@ public class ProjectService {
             throw new InvalidStateException("Невозможно удалить владельца проекта");
         }
 
+        taskAssigneeRepository.deleteByTaskProjectIdAndUserId(projectId, userId);
+        taskReviewerRepository.deleteByProjectIdAndUserId(projectId, userId);
         projectMemberRepository.deleteByProjectIdAndUserId(projectId, userId);
     }
 
@@ -121,10 +129,10 @@ public class ProjectService {
             throw new InvalidStateException("Владелец не может покинуть проект. Передайте права или удалите проект.");
         }
 
+        taskAssigneeRepository.deleteByTaskProjectIdAndUserId(projectId, currentUserId);
+        taskReviewerRepository.deleteByProjectIdAndUserId(projectId, currentUserId);
         projectMemberRepository.deleteByProjectIdAndUserId(projectId, currentUserId);
     }
-
-    // Проверка прав
 
     private void checkOwnership(Project project) {
         UUID currentUserId = userService.getCurrentUserId();

@@ -8,10 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -22,7 +19,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -56,8 +54,8 @@ public class User {
     @OneToMany(mappedBy = "user")
     private Set<ProjectMember> memberships = new HashSet<>();
 
-    @OneToMany(mappedBy = "assignee")
-    private Set<Task> assignedTasks = new HashSet<>();
+    @OneToMany(mappedBy = "user")
+    private Set<TaskAssignee> taskAssignments = new HashSet<>();
 
     @OneToMany(mappedBy = "author")
     private Set<Comment> comments = new HashSet<>();

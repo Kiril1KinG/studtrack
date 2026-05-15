@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.diploma.studtrack.model.Task;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
@@ -28,4 +29,8 @@ public class TaskUpdateRequest {
     private Task.Priority priority;
 
     private UUID assigneeId;
+
+    private boolean reviewRequired;
+
+    private LocalDate deadline;
 }

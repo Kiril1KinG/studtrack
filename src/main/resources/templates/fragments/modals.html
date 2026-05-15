@@ -2,15 +2,16 @@
      class="modal fade"
      id="createTaskModal"
      tabindex="-1"
-     xmlns:th="http://www.thymeleaf.org">
+     xmlns:th="http://www.thymeleaf.org"
+     xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form th:action="@{/api/projects/{id}/tasks(id=${projectId})}"
+            <form th:action="@{/projects/{id}/tasks(id=${projectId})}"
                   method="post"
-                  hx-post="@{/api/projects/{id}/tasks(id=${projectId})}"
+                  th:attr="hx-post=@{/projects/{id}/tasks(id=${projectId})}"
                   hx-target="#kanban-board"
                   hx-swap="outerHTML"
-                  hx-on:after-request="bootstrap.Modal.getInstance(document.getElementById('createTaskModal')).hide()">
+                  hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('createTaskModal')).hide()">
                 <div class="modal-header">
                     <h5 class="modal-title">Новая задача</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -33,6 +34,10 @@
                         </select>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Дедлайн</label>
+                        <input type="date" name="deadline" class="form-control">
+                    </div>
+                    <div class="mb-3">
                         <div class="form-check">
                             <input type="checkbox" name="reviewRequired" class="form-check-input" id="reviewRequiredCheck">
                             <label class="form-check-label" for="reviewRequiredCheck">Требуется ревью</label>
@@ -42,6 +47,71 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                     <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="addReviewerModal(taskId, projectMembers, currentUserId, assigneeIds)" class="modal fade" id="addReviewerModal" tabindex="-1"
+     xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{/tasks/{id}/reviewers(id=${taskId})}"
+                  method="post"
+                  th:attr="hx-post=@{/tasks/{id}/reviewers(id=${taskId})}"
+                  hx-target="#reviewers-list"
+                  hx-swap="outerHTML"
+                  hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('addReviewerModal')).hide()">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить ревьюера</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="reviewerId" id="selectedReviewerId">
+                    <select class="form-select" onchange="document.getElementById('selectedReviewerId').value = this.value">
+                        <option value="">Выберите участника...</option>
+                        <option th:each="member : ${projectMembers}"
+                                th:if="${member.id != currentUserId && (assigneeIds == null || !assigneeIds.contains(member.id))}"
+                                th:value="${member.id}"
+                                th:text="${member.fullName}"></option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="addAssigneeModal(taskId, projectMembers, currentUserId)" class="modal fade" id="addAssigneeModal" tabindex="-1"
+     xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{/tasks/{id}/assignees(id=${taskId})}"
+                  method="post"
+                  th:attr="hx-post=@{/tasks/{id}/assignees(id=${taskId})}"
+                  hx-target="#assignees-list"
+                  hx-swap="outerHTML"
+                  hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('addAssigneeModal')).hide()">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить исполнителя</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="assigneeId" id="selectedAssigneeId">
+                    <select class="form-select" onchange="document.getElementById('selectedAssigneeId').value = this.value">
+                        <option value="">Выберите участника...</option>
+                        <option th:each="member : ${projectMembers}"
+                                th:value="${member.id}"
+                                th:text="${member.fullName}"></option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
                 </div>
             </form>
         </div>

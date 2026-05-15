@@ -70,7 +70,8 @@ public class TaskController {
                 request.getDescription(),
                 request.getPriority(),
                 request.isReviewRequired(),
-                request.getAssigneeId()
+                request.getAssigneeId(),
+                request.getDeadline()
         );
         log.info("Задача создана с id: {}", task.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(taskMapper.toResponse(task));
@@ -87,7 +88,9 @@ public class TaskController {
                 request.getTitle(),
                 request.getDescription(),
                 request.getPriority(),
-                request.getAssigneeId()
+                request.getAssigneeId(),
+                request.isReviewRequired(),
+                request.getDeadline()
         );
         log.info("Задача обновлена: {}", task.getId());
         return ResponseEntity.ok(taskMapper.toResponse(task));
