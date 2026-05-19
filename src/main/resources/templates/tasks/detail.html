@@ -113,17 +113,23 @@
                                   hx-encoding="multipart/form-data"
                                   hx-target="#attachments-list"
                                   hx-swap="outerHTML"
+                                  hx-on::after-request="this.reset()"
+                                  id="attachments-upload-form"
                                   class="mb-3">
                                 <div class="input-group">
                                     <span class="input-group-text">
                                         <i class="bi bi-paperclip"></i>
                                     </span>
-                                    <input class="form-control" type="file" name="files" multiple required>
+                                    <input class="form-control" type="file" name="files" multiple required id="attachments-file-input">
                                     <button class="btn btn-outline-primary" type="submit">
                                         <i class="bi bi-upload me-1"></i> Добавить
                                     </button>
                                 </div>
                             </form>
+                            <div id="attachments-drop-zone" class="border border-2 border-dashed rounded p-3 text-center small text-muted bg-white mb-3">
+                                <i class="bi bi-image me-1"></i>
+                                Перетащите скриншот сюда или нажмите <kbd>Ctrl</kbd> + <kbd>V</kbd>
+                            </div>
                             <div id="attachments-list" th:replace="~{fragments/task-attachments :: attachmentList}"></div>
                         </div>
                     </div>
@@ -415,6 +421,48 @@
             taskId=${task.id},
             projectMembers=${projectMembers},
             currentUserId=${currentUser.id})}"></div>
+
+    <script>
+        (() => {
+            const form = document.getElementById("attachments-upload-form");
+            const input = document.getElementById("attachments-file-input");
+            const dropZone = document.getElementById("attachments-drop-zone");
+            const panel = document.getElementById("attachments-panel");
+            if (!form || !input || !dropZone || !panel || typeof DataTransfer === "undefined") return;
+
+            const setFilesAndSubmit = (files) => {
+                if (!files || files.length === 0) return;
+                const dt = new DataTransfer();
+                for (const file of files) dt.items.add(file);
+                input.files = dt.files;
+                form.requestSubmit();
+            };
+
+            const imageFilesFrom = (fileList) =>
+                Array.from(fileList || []).filter((file) => file.type && file.type.startsWith("image/"));
+
+            dropZone.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                dropZone.classList.add("border-primary", "text-primary");
+            });
+            dropZone.addEventListener("dragleave", () => {
+                dropZone.classList.remove("border-primary", "text-primary");
+            });
+            dropZone.addEventListener("drop", (event) => {
+                event.preventDefault();
+                dropZone.classList.remove("border-primary", "text-primary");
+                setFilesAndSubmit(imageFilesFrom(event.dataTransfer?.files));
+            });
+
+            document.addEventListener("paste", (event) => {
+                if (!panel.classList.contains("show")) return;
+                const files = imageFilesFrom(event.clipboardData?.files);
+                if (files.length === 0) return;
+                event.preventDefault();
+                setFilesAndSubmit(files);
+            });
+        })();
+    </script>
 </main>
 </body>
 </html>
