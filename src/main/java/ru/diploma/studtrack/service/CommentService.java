@@ -28,6 +28,7 @@ public class CommentService {
     private final ProjectService projectService;
     private final TaskReviewRoundService roundService;
     private final NotificationService notificationService;
+    private final TaskAttachmentService taskAttachmentService;
 
     public List<Comment> getByTask(UUID taskId) {
         return commentRepository.findByTaskIdOrderByCreatedAtAsc(taskId);
@@ -44,6 +45,11 @@ public class CommentService {
 
     @Transactional
     public Comment addCommentToTask(UUID taskId, String content) {
+        return addCommentToTask(taskId, content, List.of());
+    }
+
+    @Transactional
+    public Comment addCommentToTask(UUID taskId, String content, List<UUID> attachmentIds) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
 
@@ -57,6 +63,7 @@ public class CommentService {
                 .build();
 
         Comment saved = commentRepository.save(comment);
+        taskAttachmentService.attachToComment(taskId, saved, attachmentIds);
         notificationService.notifyCommentAdded(saved, currentUser);
         return saved;
     }
@@ -83,6 +90,11 @@ public class CommentService {
 
     @Transactional
     public Comment addCommentToChangeRequest(UUID changeRequestId, String content) {
+        return addCommentToChangeRequest(changeRequestId, content, List.of());
+    }
+
+    @Transactional
+    public Comment addCommentToChangeRequest(UUID changeRequestId, String content, List<UUID> attachmentIds) {
         ChangeRequest cr = changeRequestRepository.findById(changeRequestId)
                 .orElseThrow(() -> new NotFoundException("Замечание", changeRequestId));
         Task task = cr.getRound().getTask();
@@ -99,6 +111,7 @@ public class CommentService {
                 .build();
 
         Comment saved = commentRepository.save(comment);
+        taskAttachmentService.attachToComment(task.getId(), saved, attachmentIds);
         notificationService.notifyCommentAdded(saved, currentUser);
         return saved;
     }

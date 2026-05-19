@@ -46,7 +46,7 @@ public class CommentController {
             @Valid @RequestBody CommentCreateRequest request) {
         log.info("Запрос на добавление комментария к задаче {}: content='{}'", 
                 taskId, request.getContent());
-        Comment comment = commentService.addCommentToTask(taskId, request.getContent());
+        Comment comment = commentService.addCommentToTask(taskId, request.getContent(), request.getAttachmentIds());
         log.info("Комментарий создан с id: {}", comment.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(commentMapper.toResponse(comment));
     }

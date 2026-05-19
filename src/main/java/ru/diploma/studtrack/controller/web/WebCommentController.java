@@ -33,7 +33,7 @@ public class WebCommentController {
         var task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
 
-        Comment comment = commentService.addCommentToTask(taskId, request.getContent());
+        Comment comment = commentService.addCommentToTask(taskId, request.getContent(), request.getAttachmentIds());
         model.addAttribute("comment", comment);
         return "fragments/comments :: singleComment";
     }
@@ -81,8 +81,9 @@ public class WebCommentController {
     @PostMapping("/change-requests/{crId}/comments")
     public String addCrComment(@PathVariable UUID crId,
                                @RequestParam String content,
+                               @RequestParam(name = "attachmentIds", required = false) List<UUID> attachmentIds,
                                Model model) {
-        commentService.addCommentToChangeRequest(crId, content);
+        commentService.addCommentToChangeRequest(crId, content, attachmentIds != null ? attachmentIds : List.of());
         List<Comment> comments = commentService.getByChangeRequest(crId);
         model.addAttribute("comments", comments);
         model.addAttribute("crId", crId);

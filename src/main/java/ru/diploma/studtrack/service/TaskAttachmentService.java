@@ -6,6 +6,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.diploma.studtrack.exception.AccessDeniedException;
 import ru.diploma.studtrack.exception.NotFoundException;
+import ru.diploma.studtrack.exception.InvalidStateException;
+import ru.diploma.studtrack.model.Comment;
 import ru.diploma.studtrack.model.Task;
 import ru.diploma.studtrack.model.TaskAttachment;
 import ru.diploma.studtrack.model.User;
@@ -13,6 +15,7 @@ import ru.diploma.studtrack.repository.TaskAttachmentRepository;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,6 +74,34 @@ public class TaskAttachmentService {
     public TaskAttachment findById(UUID attachmentId) {
         return taskAttachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new NotFoundException("Вложение", attachmentId));
+    }
+
+    @Transactional
+    public List<TaskAttachment> attachToComment(UUID taskId, Comment comment, List<UUID> attachmentIds) {
+        if (attachmentIds == null || attachmentIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<TaskAttachment> attachments = taskAttachmentRepository.findByIdIn(attachmentIds);
+        if (attachments.size() != attachmentIds.size()) {
+            throw new NotFoundException("Некоторые вложения не найдены");
+        }
+
+        UUID currentUserId = userService.getCurrentUserId();
+        for (TaskAttachment attachment : attachments) {
+            if (!attachment.getTask().getId().equals(taskId)) {
+                throw new InvalidStateException("Нельзя привязать вложение", "вложение относится к другой задаче", "прикрепите файл в текущей задаче");
+            }
+            if (attachment.getComment() != null) {
+                throw new InvalidStateException("Нельзя привязать вложение", "вложение уже прикреплено к другому комментарию", "загрузите новый файл");
+            }
+            if (!attachment.getUploadedBy().getId().equals(currentUserId)) {
+                throw new AccessDeniedException("Привязать можно только свои загруженные вложения");
+            }
+            attachment.setComment(comment);
+        }
+
+        return taskAttachmentRepository.saveAll(attachments);
     }
 
     @Transactional

@@ -144,11 +144,18 @@
                           th:attr="hx-post=@{/tasks/{id}/comments(id=${task.id})}"
                           hx-target="#comments-list"
                           hx-swap="afterbegin"
-                          hx-on::after-request="this.reset()">
+                          hx-on::after-request="this.reset()"
+                          id="task-comment-form"
+                          th:attrappend="data-task-id=${task.id}">
                         <div class="mb-2">
                             <textarea name="content" class="form-control" rows="2"
+                                      id="task-comment-textarea"
                                       placeholder="Написать комментарий..." required></textarea>
+                            <div id="comment-drop-hint" class="form-text">
+                                Можно вставить скриншот через <kbd>Ctrl</kbd> + <kbd>V</kbd> или перетащить его в поле комментария.
+                            </div>
                         </div>
+                        <input type="hidden" name="attachmentIds" id="task-comment-attachment-ids">
                         <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
                     </form>
                     <hr>
@@ -428,6 +435,9 @@
             const input = document.getElementById("attachments-file-input");
             const dropZone = document.getElementById("attachments-drop-zone");
             const panel = document.getElementById("attachments-panel");
+            const commentForm = document.getElementById("task-comment-form");
+            const commentTextarea = document.getElementById("task-comment-textarea");
+            const commentAttachmentIds = document.getElementById("task-comment-attachment-ids");
             if (!form || !input || !dropZone || !panel || typeof DataTransfer === "undefined") return;
 
             const setFilesAndSubmit = (files) => {
@@ -440,6 +450,76 @@
 
             const imageFilesFrom = (fileList) =>
                 Array.from(fileList || []).filter((file) => file.type && file.type.startsWith("image/"));
+
+            const refreshAttachmentsList = async () => {
+                const taskId = commentForm?.dataset.taskId;
+                if (!taskId) return;
+                const response = await fetch(`/tasks/${taskId}/attachments`, {
+                    headers: { "HX-Request": "true" }
+                });
+                if (!response.ok) return;
+                const html = await response.text();
+                const currentList = document.getElementById("attachments-list");
+                if (currentList) currentList.outerHTML = html;
+            };
+
+            const uploadImagesForComment = async (files) => {
+                const taskId = commentForm?.dataset.taskId;
+                if (!taskId || !commentTextarea || !commentAttachmentIds) return;
+                const imageFiles = imageFilesFrom(files);
+                if (imageFiles.length === 0) return;
+
+                const formData = new FormData();
+                imageFiles.forEach((file, index) => {
+                    const fallbackName = `screenshot-${Date.now()}-${index + 1}.png`;
+                    formData.append("files", file, file.name || fallbackName);
+                });
+
+                const response = await fetch(`/api/tasks/${taskId}/attachments`, {
+                    method: "POST",
+                    body: formData
+                });
+                if (!response.ok) throw new Error("Не удалось загрузить скриншот");
+                const uploaded = await response.json();
+                if (!Array.isArray(uploaded) || uploaded.length === 0) return;
+                const ids = uploaded.map((item) => item.id).filter(Boolean);
+                if (ids.length > 0) {
+                    commentAttachmentIds.value = commentAttachmentIds.value
+                        ? `${commentAttachmentIds.value},${ids.join(",")}`
+                        : ids.join(",");
+                    commentTextarea.classList.add("border-success");
+                    setTimeout(() => commentTextarea.classList.remove("border-success"), 900);
+                }
+                await refreshAttachmentsList();
+            };
+
+            if (commentForm && commentAttachmentIds) {
+                commentForm.addEventListener("reset", () => {
+                    commentAttachmentIds.value = "";
+                });
+            }
+
+            const uploadImagesToTask = async (files) => {
+                const taskId = commentForm?.dataset.taskId;
+                if (!taskId) return [];
+                const imageFiles = imageFilesFrom(files);
+                if (imageFiles.length === 0) return [];
+
+                const formData = new FormData();
+                imageFiles.forEach((file, index) => {
+                    const fallbackName = `screenshot-${Date.now()}-${index + 1}.png`;
+                    formData.append("files", file, file.name || fallbackName);
+                });
+
+                const response = await fetch(`/api/tasks/${taskId}/attachments`, {
+                    method: "POST",
+                    body: formData
+                });
+                if (!response.ok) throw new Error("Не удалось загрузить скриншот");
+                const uploaded = await response.json();
+                await refreshAttachmentsList();
+                return Array.isArray(uploaded) ? uploaded : [];
+            };
 
             dropZone.addEventListener("dragover", (event) => {
                 event.preventDefault();
@@ -461,6 +541,106 @@
                 event.preventDefault();
                 setFilesAndSubmit(files);
             });
+
+            if (commentTextarea) {
+                commentTextarea.addEventListener("dragover", (event) => {
+                    event.preventDefault();
+                    commentTextarea.classList.add("border-primary");
+                });
+
+                commentTextarea.addEventListener("dragleave", () => {
+                    commentTextarea.classList.remove("border-primary");
+                });
+
+                commentTextarea.addEventListener("drop", async (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    commentTextarea.classList.remove("border-primary");
+                    try {
+                        await uploadImagesForComment(event.dataTransfer?.files);
+                    } catch (error) {
+                        alert(error.message || "Ошибка загрузки скриншота");
+                    }
+                });
+
+                commentTextarea.addEventListener("paste", async (event) => {
+                    const files = imageFilesFrom(event.clipboardData?.files);
+                    if (files.length === 0) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    try {
+                        await uploadImagesForComment(files);
+                    } catch (error) {
+                        alert(error.message || "Ошибка загрузки скриншота");
+                    }
+                });
+            }
+
+            const bindCrCommentInput = (inputElement) => {
+                if (!inputElement || inputElement.dataset.screenshotBound === "1") return;
+                inputElement.dataset.screenshotBound = "1";
+
+                inputElement.addEventListener("dragover", (event) => {
+                    event.preventDefault();
+                    inputElement.classList.add("border-primary");
+                });
+
+                inputElement.addEventListener("dragleave", () => {
+                    inputElement.classList.remove("border-primary");
+                });
+
+                inputElement.addEventListener("drop", async (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    inputElement.classList.remove("border-primary");
+                    try {
+                        const uploaded = await uploadImagesToTask(event.dataTransfer?.files);
+                        const hidden = inputElement
+                            .closest("form")
+                            ?.querySelector(".js-cr-attachment-ids");
+                        const ids = uploaded.map((item) => item.id).filter(Boolean);
+                        if (hidden && ids.length > 0) {
+                            hidden.value = hidden.value
+                                ? `${hidden.value},${ids.join(",")}`
+                                : ids.join(",");
+                            inputElement.classList.add("border-success");
+                            setTimeout(() => inputElement.classList.remove("border-success"), 900);
+                        }
+                    } catch (error) {
+                        alert(error.message || "Ошибка загрузки скриншота");
+                    }
+                });
+
+                inputElement.addEventListener("paste", async (event) => {
+                    const files = imageFilesFrom(event.clipboardData?.files);
+                    if (files.length === 0) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    try {
+                        const uploaded = await uploadImagesToTask(files);
+                        const hidden = inputElement
+                            .closest("form")
+                            ?.querySelector(".js-cr-attachment-ids");
+                        const ids = uploaded.map((item) => item.id).filter(Boolean);
+                        if (hidden && ids.length > 0) {
+                            hidden.value = hidden.value
+                                ? `${hidden.value},${ids.join(",")}`
+                                : ids.join(",");
+                            inputElement.classList.add("border-success");
+                            setTimeout(() => inputElement.classList.remove("border-success"), 900);
+                        }
+                    } catch (error) {
+                        alert(error.message || "Ошибка загрузки скриншота");
+                    }
+                });
+            };
+
+            const bindAllCrInputs = () => {
+                document.querySelectorAll(".js-cr-comment-input").forEach(bindCrCommentInput);
+            };
+
+            bindAllCrInputs();
+            document.body.addEventListener("htmx:afterSwap", bindAllCrInputs);
         })();
     </script>
 </main>
