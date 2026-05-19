@@ -1,12 +1,13 @@
 <div xmlns:th="http://www.thymeleaf.org">
     <div th:fragment="attachmentList" id="attachments-list">
-        <div th:if="${attachments == null || attachments.isEmpty()}" class="text-muted small">
-            Вложения отсутствуют
+        <div th:if="${attachments == null || attachments.isEmpty()}" class="text-muted small d-flex align-items-center">
+            <i class="bi bi-paperclip me-2"></i>
+            <span>Файлы не прикреплены</span>
         </div>
         <ul th:if="${attachments != null && !attachments.isEmpty()}" class="list-group list-group-flush mb-2">
-            <li th:each="att : ${attachments}" class="list-group-item px-0 d-flex justify-content-between align-items-center gap-2">
-                <div class="small">
-                    <i class="bi bi-paperclip me-1"></i>
+            <li th:each="att : ${attachments}" class="list-group-item px-1 d-flex justify-content-between align-items-center gap-2 bg-transparent">
+                <div class="small d-flex align-items-center">
+                    <i class="bi bi-paperclip me-2 text-secondary"></i>
                     <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
                        th:text="${att.originalName}">file</a>
                     <span class="text-muted ms-2"
