@@ -32,6 +32,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_LIQUIBASE_ENABLED: "false"
       MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: http://localhost:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: studtrack-attachments
