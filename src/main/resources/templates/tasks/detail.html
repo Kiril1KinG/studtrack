@@ -94,6 +94,27 @@
                     <p th:if="${task.description == null || task.description.isBlank()}" class="text-muted mb-0">Описание не указано</p>
                 </div>
             </div>
+            <div class="card mb-4">
+                <div class="card-header">Вложения</div>
+                <div class="card-body">
+                    <form th:action="@{/tasks/{id}/attachments(id=${task.id})}"
+                          method="post"
+                          enctype="multipart/form-data"
+                          th:attr="hx-post=@{/tasks/{id}/attachments(id=${task.id})}"
+                          hx-encoding="multipart/form-data"
+                          hx-target="#attachments-list"
+                          hx-swap="outerHTML"
+                          class="mb-3">
+                        <div class="input-group">
+                            <input class="form-control" type="file" name="files" multiple required>
+                            <button class="btn btn-outline-primary" type="submit">
+                                <i class="bi bi-upload"></i> Загрузить
+                            </button>
+                        </div>
+                    </form>
+                    <div id="attachments-list" th:replace="~{fragments/task-attachments :: attachmentList}"></div>
+                </div>
+            </div>
 
             <div class="card mb-4">
                 <div class="card-header">Комментарии</div>

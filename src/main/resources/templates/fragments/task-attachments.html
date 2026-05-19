@@ -1,0 +1,29 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <div th:fragment="attachmentList" id="attachments-list">
+        <div th:if="${attachments == null || attachments.isEmpty()}" class="text-muted small">
+            Вложения отсутствуют
+        </div>
+        <ul th:if="${attachments != null && !attachments.isEmpty()}" class="list-group list-group-flush mb-2">
+            <li th:each="att : ${attachments}" class="list-group-item px-0 d-flex justify-content-between align-items-center gap-2">
+                <div class="small">
+                    <i class="bi bi-paperclip me-1"></i>
+                    <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                       th:text="${att.originalName}">file</a>
+                    <span class="text-muted ms-2"
+                          th:text="${#numbers.formatDecimal(att.size / 1024.0, 1, 1) + ' KB'}">0 KB</span>
+                </div>
+                <form th:if="${att.uploadedBy.id == currentUserId || isOwner}"
+                      th:action="@{/tasks/attachments/{id}(id=${att.id})}"
+                      method="post"
+                      th:attr="hx-delete=@{/tasks/attachments/{id}(id=${att.id},taskId=${taskId})}"
+                      hx-target="#attachments-list"
+                      hx-swap="outerHTML"
+                      class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </div>
+</div>
