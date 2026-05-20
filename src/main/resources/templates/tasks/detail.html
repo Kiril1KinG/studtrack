@@ -130,7 +130,7 @@
                                 <i class="bi bi-image me-1"></i>
                                 Перетащите скриншот сюда или нажмите <kbd>Ctrl</kbd> + <kbd>V</kbd>
                             </div>
-                            <div id="attachments-list" th:replace="~{fragments/task-attachments :: attachmentList}"></div>
+                            <div id="attachments-list" th:replace="~{fragments/task-attachments :: attachmentList(taskId=${task.id})}"></div>
                         </div>
                     </div>
                 </div>
@@ -151,11 +151,18 @@
                             <textarea name="content" class="form-control" rows="2"
                                       id="task-comment-textarea"
                                       placeholder="Написать комментарий..." required></textarea>
+                            <div class="mt-2 d-flex flex-wrap align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="task-comment-attach-btn">
+                                    <i class="bi bi-paperclip me-1"></i> Прикрепить файл
+                                </button>
+                                <input type="file" id="task-comment-file-input" class="d-none" multiple>
+                                <div id="task-comment-pending-attachments" class="d-flex flex-wrap gap-1 small text-muted"></div>
+                            </div>
                             <div id="comment-drop-hint" class="form-text">
                                 Можно вставить скриншот через <kbd>Ctrl</kbd> + <kbd>V</kbd> или перетащить его в поле комментария.
                             </div>
                         </div>
-                        <input type="hidden" name="attachmentIds" id="task-comment-attachment-ids">
+                        <div id="task-comment-attachment-ids"></div>
                         <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
                     </form>
                     <hr>
@@ -438,6 +445,9 @@
             const commentForm = document.getElementById("task-comment-form");
             const commentTextarea = document.getElementById("task-comment-textarea");
             const commentAttachmentIds = document.getElementById("task-comment-attachment-ids");
+            const commentAttachBtn = document.getElementById("task-comment-attach-btn");
+            const commentFileInput = document.getElementById("task-comment-file-input");
+            const commentPending = document.getElementById("task-comment-pending-attachments");
             if (!form || !input || !dropZone || !panel || typeof DataTransfer === "undefined") return;
 
             const setFilesAndSubmit = (files) => {
@@ -450,6 +460,17 @@
 
             const imageFilesFrom = (fileList) =>
                 Array.from(fileList || []).filter((file) => file.type && file.type.startsWith("image/"));
+            const filesFrom = (fileList) => Array.from(fileList || []).filter((file) => !!file);
+
+            const appendCommentPendingBadges = (uploaded) => {
+                if (!commentPending || !Array.isArray(uploaded)) return;
+                uploaded.forEach((item) => {
+                    const badge = document.createElement("span");
+                    badge.className = "badge rounded-pill text-bg-secondary";
+                    badge.textContent = item?.originalName || "file";
+                    commentPending.appendChild(badge);
+                });
+            };
 
             const refreshAttachmentsList = async () => {
                 const taskId = commentForm?.dataset.taskId;
@@ -463,14 +484,14 @@
                 if (currentList) currentList.outerHTML = html;
             };
 
-            const uploadImagesForComment = async (files) => {
+            const uploadFilesForComment = async (files, imagesOnly = false) => {
                 const taskId = commentForm?.dataset.taskId;
                 if (!taskId || !commentTextarea || !commentAttachmentIds) return;
-                const imageFiles = imageFilesFrom(files);
-                if (imageFiles.length === 0) return;
+                const selectedFiles = imagesOnly ? imageFilesFrom(files) : filesFrom(files);
+                if (selectedFiles.length === 0) return;
 
                 const formData = new FormData();
-                imageFiles.forEach((file, index) => {
+                selectedFiles.forEach((file, index) => {
                     const fallbackName = `screenshot-${Date.now()}-${index + 1}.png`;
                     formData.append("files", file, file.name || fallbackName);
                 });
@@ -484,9 +505,14 @@
                 if (!Array.isArray(uploaded) || uploaded.length === 0) return;
                 const ids = uploaded.map((item) => item.id).filter(Boolean);
                 if (ids.length > 0) {
-                    commentAttachmentIds.value = commentAttachmentIds.value
-                        ? `${commentAttachmentIds.value},${ids.join(",")}`
-                        : ids.join(",");
+                    ids.forEach((id) => {
+                        const hidden = document.createElement("input");
+                        hidden.type = "hidden";
+                        hidden.name = "attachmentIds";
+                        hidden.value = id;
+                        commentAttachmentIds.appendChild(hidden);
+                    });
+                    appendCommentPendingBadges(uploaded);
                     commentTextarea.classList.add("border-success");
                     setTimeout(() => commentTextarea.classList.remove("border-success"), 900);
                 }
@@ -494,19 +520,37 @@
             };
 
             if (commentForm && commentAttachmentIds) {
+                commentForm.addEventListener("htmx:afterRequest", async () => {
+                    await refreshAttachmentsList();
+                });
                 commentForm.addEventListener("reset", () => {
-                    commentAttachmentIds.value = "";
+                    commentAttachmentIds.innerHTML = "";
+                    if (commentPending) commentPending.innerHTML = "";
+                    if (commentFileInput) commentFileInput.value = "";
                 });
             }
 
-            const uploadImagesToTask = async (files) => {
+            if (commentAttachBtn && commentFileInput) {
+                commentAttachBtn.addEventListener("click", () => commentFileInput.click());
+                commentFileInput.addEventListener("change", async () => {
+                    try {
+                        await uploadFilesForComment(commentFileInput.files, false);
+                    } catch (error) {
+                        alert(error.message || "Ошибка загрузки файла");
+                    } finally {
+                        commentFileInput.value = "";
+                    }
+                });
+            }
+
+            const uploadFilesToTask = async (files, imagesOnly = true) => {
                 const taskId = commentForm?.dataset.taskId;
                 if (!taskId) return [];
-                const imageFiles = imageFilesFrom(files);
-                if (imageFiles.length === 0) return [];
+                const selectedFiles = imagesOnly ? imageFilesFrom(files) : filesFrom(files);
+                if (selectedFiles.length === 0) return [];
 
                 const formData = new FormData();
-                imageFiles.forEach((file, index) => {
+                selectedFiles.forEach((file, index) => {
                     const fallbackName = `screenshot-${Date.now()}-${index + 1}.png`;
                     formData.append("files", file, file.name || fallbackName);
                 });
@@ -557,7 +601,7 @@
                     event.stopPropagation();
                     commentTextarea.classList.remove("border-primary");
                     try {
-                        await uploadImagesForComment(event.dataTransfer?.files);
+                        await uploadFilesForComment(event.dataTransfer?.files, true);
                     } catch (error) {
                         alert(error.message || "Ошибка загрузки скриншота");
                     }
@@ -569,7 +613,7 @@
                     event.preventDefault();
                     event.stopPropagation();
                     try {
-                        await uploadImagesForComment(files);
+                        await uploadFilesForComment(files, true);
                     } catch (error) {
                         alert(error.message || "Ошибка загрузки скриншота");
                     }
@@ -579,6 +623,52 @@
             const bindCrCommentInput = (inputElement) => {
                 if (!inputElement || inputElement.dataset.screenshotBound === "1") return;
                 inputElement.dataset.screenshotBound = "1";
+                const formEl = inputElement.closest("form");
+                if (formEl && formEl.dataset.attachmentsResetBound !== "1") {
+                    formEl.dataset.attachmentsResetBound = "1";
+                    const attachBtn = formEl.querySelector(".js-cr-attach-btn");
+                    const fileInput = formEl.querySelector(".js-cr-file-input");
+                    const pendingWrap = formEl.querySelector(".js-cr-pending-attachments");
+                    if (attachBtn && fileInput) {
+                        attachBtn.addEventListener("click", () => fileInput.click());
+                        fileInput.addEventListener("change", async () => {
+                            try {
+                                const uploaded = await uploadFilesToTask(fileInput.files?.length ? fileInput.files : [], false);
+                                const hidden = formEl.querySelector(".js-cr-attachment-ids");
+                                const ids = uploaded.map((item) => item.id).filter(Boolean);
+                                if (hidden && ids.length > 0) {
+                                    ids.forEach((id, idx) => {
+                                        const node = document.createElement("input");
+                                        node.type = "hidden";
+                                        node.name = "attachmentIds";
+                                        node.value = id;
+                                        hidden.parentElement?.insertBefore(node, hidden.nextSibling);
+                                        const badge = document.createElement("span");
+                                        badge.className = "badge rounded-pill text-bg-secondary";
+                                        badge.textContent = uploaded[idx]?.originalName || "file";
+                                        pendingWrap?.appendChild(badge);
+                                    });
+                                }
+                            } catch (error) {
+                                alert(error.message || "Ошибка загрузки файла");
+                            } finally {
+                                fileInput.value = "";
+                            }
+                        });
+                    }
+                    formEl.addEventListener("htmx:afterRequest", async () => {
+                        await refreshAttachmentsList();
+                    });
+                    formEl.addEventListener("reset", () => {
+                        formEl.querySelectorAll('input[name="attachmentIds"]').forEach((node) => {
+                            if (!node.classList.contains("js-cr-attachment-ids")) {
+                                node.remove();
+                            }
+                        });
+                        const localPending = formEl.querySelector(".js-cr-pending-attachments");
+                        if (localPending) localPending.innerHTML = "";
+                    });
+                }
 
                 inputElement.addEventListener("dragover", (event) => {
                     event.preventDefault();
@@ -594,15 +684,19 @@
                     event.stopPropagation();
                     inputElement.classList.remove("border-primary");
                     try {
-                        const uploaded = await uploadImagesToTask(event.dataTransfer?.files);
+                        const uploaded = await uploadFilesToTask(event.dataTransfer?.files, true);
                         const hidden = inputElement
                             .closest("form")
                             ?.querySelector(".js-cr-attachment-ids");
                         const ids = uploaded.map((item) => item.id).filter(Boolean);
                         if (hidden && ids.length > 0) {
-                            hidden.value = hidden.value
-                                ? `${hidden.value},${ids.join(",")}`
-                                : ids.join(",");
+                            ids.forEach((id) => {
+                                const node = document.createElement("input");
+                                node.type = "hidden";
+                                node.name = "attachmentIds";
+                                node.value = id;
+                                hidden.parentElement?.insertBefore(node, hidden.nextSibling);
+                            });
                             inputElement.classList.add("border-success");
                             setTimeout(() => inputElement.classList.remove("border-success"), 900);
                         }
@@ -617,15 +711,19 @@
                     event.preventDefault();
                     event.stopPropagation();
                     try {
-                        const uploaded = await uploadImagesToTask(files);
+                        const uploaded = await uploadFilesToTask(files, true);
                         const hidden = inputElement
                             .closest("form")
                             ?.querySelector(".js-cr-attachment-ids");
                         const ids = uploaded.map((item) => item.id).filter(Boolean);
                         if (hidden && ids.length > 0) {
-                            hidden.value = hidden.value
-                                ? `${hidden.value},${ids.join(",")}`
-                                : ids.join(",");
+                            ids.forEach((id) => {
+                                const node = document.createElement("input");
+                                node.type = "hidden";
+                                node.name = "attachmentIds";
+                                node.value = id;
+                                hidden.parentElement?.insertBefore(node, hidden.nextSibling);
+                            });
                             inputElement.classList.add("border-success");
                             setTimeout(() => inputElement.classList.remove("border-success"), 900);
                         }

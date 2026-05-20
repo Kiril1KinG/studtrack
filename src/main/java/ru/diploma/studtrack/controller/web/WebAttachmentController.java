@@ -59,8 +59,11 @@ public class WebAttachmentController {
 
     @DeleteMapping("/attachments/{attachmentId}")
     public String deleteAttachment(@PathVariable UUID attachmentId,
-                                   @RequestParam UUID taskId,
+                                   @RequestParam(required = false) UUID taskId,
                                    Model model) {
+        if (taskId == null) {
+            taskId = taskAttachmentService.findById(attachmentId).getTask().getId();
+        }
         taskAttachmentService.deleteAttachment(attachmentId);
         return getAttachments(taskId, model);
     }

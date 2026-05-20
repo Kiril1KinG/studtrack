@@ -16,13 +16,30 @@
         </div>
 
         <p class="mt-1 mb-0" th:text="*{content}"></p>
-        <div class="mt-2 d-flex flex-wrap gap-2" th:if="${comment.attachments != null && !comment.attachments.isEmpty()}">
-            <a th:each="att : ${comment.attachments}"
-               th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
-               class="badge rounded-pill text-bg-light text-decoration-none border">
-                <i class="bi bi-paperclip me-1"></i>
-                <span th:text="${att.originalName}">file</span>
-            </a>
+        <div class="mt-2" th:if="${comment.attachments != null && !comment.attachments.isEmpty()}">
+            <div class="d-flex flex-wrap gap-2 mb-2"
+                 th:if="${!comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')].isEmpty()}">
+                <a th:each="att : ${comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')]}"
+                   th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                   class="d-inline-block border rounded overflow-hidden text-decoration-none bg-light"
+                   style="width: 120px;">
+                    <img th:src="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                         th:alt="${att.originalName}"
+                         style="width: 120px; height: 90px; object-fit: cover; display: block;">
+                    <span class="d-block px-2 py-1 small text-truncate text-dark"
+                          th:text="${att.originalName}">image.png</span>
+                </a>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2"
+                 th:if="${!comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')].isEmpty()}">
+                <a th:each="att : ${comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')]}"
+                   th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                   class="badge rounded-pill text-bg-light text-decoration-none border">
+                    <i class="bi bi-paperclip me-1"></i>
+                    <span th:text="${att.originalName}">file</span>
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -72,12 +89,21 @@
               method="post"
               hx-swap="innerHTML"
               hx-on::after-request="this.reset()"
-              class="mt-2 d-flex gap-2">
-            <input type="text" name="content" class="form-control form-control-sm js-cr-comment-input"
-                   th:attr="data-cr-id=${crId}"
-                   placeholder="Написать комментарий..." required>
-            <input type="hidden" name="attachmentIds" class="js-cr-attachment-ids">
-            <button type="submit" class="btn btn-sm btn-primary flex-shrink-0">Отправить</button>
+              class="mt-2">
+            <div class="d-flex gap-2">
+                <input type="text" name="content" class="form-control form-control-sm js-cr-comment-input"
+                       th:attr="data-cr-id=${crId}"
+                       placeholder="Написать комментарий..." required>
+                <button type="submit" class="btn btn-sm btn-primary flex-shrink-0">Отправить</button>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary js-cr-attach-btn">
+                    <i class="bi bi-paperclip me-1"></i> Файл
+                </button>
+                <input type="file" class="d-none js-cr-file-input" multiple>
+                <input type="hidden" class="js-cr-attachment-ids">
+                <div class="d-flex flex-wrap gap-1 small text-muted js-cr-pending-attachments"></div>
+            </div>
         </form>
     </div>
 </th:block>

@@ -4,27 +4,40 @@
             <i class="bi bi-paperclip me-2"></i>
             <span>Файлы не прикреплены</span>
         </div>
-        <ul th:if="${attachments != null && !attachments.isEmpty()}" class="list-group list-group-flush mb-2">
-            <li th:each="att : ${attachments}" class="list-group-item px-1 d-flex justify-content-between align-items-center gap-2 bg-transparent">
-                <div class="small d-flex align-items-center">
-                    <i class="bi bi-paperclip me-2 text-secondary"></i>
-                    <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
-                       th:text="${att.originalName}">file</a>
-                    <span class="text-muted ms-2"
-                          th:text="${#numbers.formatDecimal(att.size / 1024.0, 1, 1) + ' KB'}">0 KB</span>
-                </div>
+        <div th:if="${attachments != null && !attachments.isEmpty()}" class="d-flex flex-wrap gap-2 mb-2">
+            <div th:each="att : ${attachments}"
+                 class="border rounded overflow-hidden bg-white position-relative"
+                 style="width: 140px;">
+                <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}" class="text-decoration-none">
+                    <th:block th:if="${att.contentType != null and #strings.startsWith(att.contentType, 'image/')}">
+                        <img th:src="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                             th:alt="${att.originalName}"
+                             style="width: 140px; height: 96px; object-fit: cover; display: block;">
+                    </th:block>
+                    <th:block th:unless="${att.contentType != null and #strings.startsWith(att.contentType, 'image/')}">
+                        <div class="d-flex align-items-center justify-content-center text-secondary"
+                             style="width: 140px; height: 96px; background: #f8f9fa;">
+                            <i class="bi bi-paperclip fs-4"></i>
+                        </div>
+                    </th:block>
+                    <div class="px-2 py-1 small text-dark">
+                        <div class="text-truncate" th:text="${att.originalName}">file</div>
+                        <div class="text-muted"
+                             th:text="${#numbers.formatDecimal(att.size / 1024.0, 1, 1) + ' KB'}">0 KB</div>
+                    </div>
+                </a>
                 <form th:if="${att.uploadedBy.id == currentUserId || isOwner}"
                       th:action="@{/tasks/attachments/{id}(id=${att.id})}"
                       method="post"
                       th:attr="hx-delete=@{/tasks/attachments/{id}(id=${att.id},taskId=${taskId})}"
                       hx-target="#attachments-list"
                       hx-swap="outerHTML"
-                      class="d-inline">
-                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">
+                      class="position-absolute top-0 end-0 m-1">
+                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1" title="Удалить">
                         <i class="bi bi-trash"></i>
                     </button>
                 </form>
-            </li>
-        </ul>
+            </div>
+        </div>
     </div>
 </div>

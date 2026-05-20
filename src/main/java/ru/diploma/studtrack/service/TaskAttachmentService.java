@@ -68,7 +68,7 @@ public class TaskAttachmentService {
     public List<TaskAttachment> getAttachments(UUID taskId) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
-        return taskAttachmentRepository.findByTaskIdOrderByUploadedAtDesc(taskId);
+        return taskAttachmentRepository.findByTaskIdAndCommentIsNullOrderByUploadedAtDesc(taskId);
     }
 
     public TaskAttachment findById(UUID attachmentId) {
@@ -99,6 +99,10 @@ public class TaskAttachmentService {
                 throw new AccessDeniedException("Привязать можно только свои загруженные вложения");
             }
             attachment.setComment(comment);
+            if (comment.getAttachments() != null && comment.getAttachments().stream()
+                    .noneMatch(existing -> existing.getId() != null && existing.getId().equals(attachment.getId()))) {
+                comment.getAttachments().add(attachment);
+            }
         }
 
         return taskAttachmentRepository.saveAll(attachments);

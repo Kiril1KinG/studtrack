@@ -3,6 +3,8 @@ package ru.diploma.studtrack.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import ru.diploma.studtrack.exception.AccessDeniedException;
 import ru.diploma.studtrack.exception.NotFoundException;
 import ru.diploma.studtrack.model.ChangeRequest;
@@ -29,6 +31,8 @@ public class CommentService {
     private final TaskReviewRoundService roundService;
     private final NotificationService notificationService;
     private final TaskAttachmentService taskAttachmentService;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public List<Comment> getByTask(UUID taskId) {
         return commentRepository.findByTaskIdOrderByCreatedAtAsc(taskId);
@@ -65,7 +69,10 @@ public class CommentService {
         Comment saved = commentRepository.save(comment);
         taskAttachmentService.attachToComment(taskId, saved, attachmentIds);
         notificationService.notifyCommentAdded(saved, currentUser);
-        return saved;
+        entityManager.flush();
+        entityManager.clear();
+        return commentRepository.findDetailedById(saved.getId())
+                .orElse(saved);
     }
 
     @Transactional
@@ -113,7 +120,10 @@ public class CommentService {
         Comment saved = commentRepository.save(comment);
         taskAttachmentService.attachToComment(task.getId(), saved, attachmentIds);
         notificationService.notifyCommentAdded(saved, currentUser);
-        return saved;
+        entityManager.flush();
+        entityManager.clear();
+        return commentRepository.findDetailedById(saved.getId())
+                .orElse(saved);
     }
 
     @Transactional

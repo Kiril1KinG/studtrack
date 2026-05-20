@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import ru.diploma.studtrack.dto.request.CommentCreateRequest;
 import ru.diploma.studtrack.dto.request.CommentUpdateRequest;
 import ru.diploma.studtrack.model.Comment;
 import ru.diploma.studtrack.service.CommentService;
@@ -28,12 +27,13 @@ public class WebCommentController {
 
     @PostMapping("/{taskId}/comments")
     public String addComment(@PathVariable UUID taskId,
-                             @Valid @ModelAttribute CommentCreateRequest request,
+                             @RequestParam String content,
+                             @RequestParam(name = "attachmentIds", required = false) List<UUID> attachmentIds,
                              Model model) {
         var task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
 
-        Comment comment = commentService.addCommentToTask(taskId, request.getContent(), request.getAttachmentIds());
+        Comment comment = commentService.addCommentToTask(taskId, content, attachmentIds != null ? attachmentIds : List.of());
         model.addAttribute("comment", comment);
         return "fragments/comments :: singleComment";
     }
