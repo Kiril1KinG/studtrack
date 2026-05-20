@@ -116,6 +116,7 @@ public class TaskHistoryService {
             case "reviewRequired" -> "требуется ревью";
             case "deadline" -> "дедлайн";
             case "status" -> "статус";
+            case "attachments" -> "вложение к задаче";
             default -> fieldName;
         };
     }

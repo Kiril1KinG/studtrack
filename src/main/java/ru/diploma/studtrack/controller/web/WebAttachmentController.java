@@ -15,6 +15,7 @@ import ru.diploma.studtrack.model.TaskAttachment;
 import ru.diploma.studtrack.model.Task;
 import ru.diploma.studtrack.service.ProjectService;
 import ru.diploma.studtrack.service.TaskAttachmentService;
+import ru.diploma.studtrack.service.TaskHistoryService;
 import ru.diploma.studtrack.service.TaskService;
 import ru.diploma.studtrack.service.UserService;
 
@@ -30,6 +31,7 @@ public class WebAttachmentController {
     private final UserService userService;
     private final TaskService taskService;
     private final ProjectService projectService;
+    private final TaskHistoryService taskHistoryService;
 
     @GetMapping("/{taskId}/attachments")
     public String getAttachments(@PathVariable UUID taskId, Model model) {
@@ -50,7 +52,15 @@ public class WebAttachmentController {
         if (files != null) {
             for (MultipartFile file : files) {
                 if (file != null && !file.isEmpty()) {
-                    taskAttachmentService.addAttachment(taskId, file);
+                    TaskAttachment created = taskAttachmentService.addAttachment(taskId, file);
+                    Task task = created.getTask();
+                    taskHistoryService.recordFieldChange(
+                            task,
+                            userService.getCurrentUser(),
+                            "attachments",
+                            null,
+                            created.getOriginalName()
+                    );
                 }
             }
         }
