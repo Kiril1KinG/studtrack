@@ -35,11 +35,11 @@ public class CommentService {
     private EntityManager entityManager;
 
     public List<Comment> getByTask(UUID taskId) {
-        return commentRepository.findByTaskIdOrderByCreatedAtAsc(taskId);
+        return commentRepository.findByTaskIdOrderByCreatedAtDesc(taskId);
     }
 
     public List<Comment> getByChangeRequest(UUID changeRequestId) {
-        return commentRepository.findByChangeRequestIdOrderByCreatedAtAsc(changeRequestId);
+        return commentRepository.findByChangeRequestIdOrderByCreatedAtDesc(changeRequestId);
     }
 
     public Comment findById(UUID id) {

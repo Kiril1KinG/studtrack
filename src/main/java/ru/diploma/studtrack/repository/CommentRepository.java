@@ -13,10 +13,10 @@ import java.util.UUID;
 public interface CommentRepository extends JpaRepository<Comment, UUID> {
 
     @EntityGraph(attributePaths = {"author", "attachments", "attachments.uploadedBy"})
-    List<Comment> findByTaskIdOrderByCreatedAtAsc(UUID taskId);
+    List<Comment> findByTaskIdOrderByCreatedAtDesc(UUID taskId);
 
     @EntityGraph(attributePaths = {"author", "attachments", "attachments.uploadedBy"})
-    List<Comment> findByChangeRequestIdOrderByCreatedAtAsc(UUID changeRequestId);
+    List<Comment> findByChangeRequestIdOrderByCreatedAtDesc(UUID changeRequestId);
 
     @EntityGraph(attributePaths = {"author", "attachments", "attachments.uploadedBy"})
     Optional<Comment> findDetailedById(UUID id);
