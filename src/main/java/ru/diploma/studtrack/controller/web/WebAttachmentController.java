@@ -71,16 +71,27 @@ public class WebAttachmentController {
     public String deleteAttachment(@PathVariable UUID attachmentId,
                                    @RequestParam(required = false) UUID taskId,
                                    Model model) {
-        if (taskId == null) {
-            taskId = taskAttachmentService.findById(attachmentId).getTask().getId();
-        }
-        taskAttachmentService.deleteAttachment(attachmentId);
-        return getAttachments(taskId, model);
+        return deleteAndReload(attachmentId, taskId, model);
+    }
+
+    @PostMapping("/attachments/{attachmentId}")
+    public String deleteAttachmentPostFallback(@PathVariable UUID attachmentId,
+                                               @RequestParam(required = false) UUID taskId,
+                                               Model model) {
+        return deleteAndReload(attachmentId, taskId, model);
     }
 
     @GetMapping("/attachments/{attachmentId}/url")
     public RedirectView downloadAttachment(@PathVariable UUID attachmentId) {
         String url = taskAttachmentService.getDownloadUrl(attachmentId);
         return new RedirectView(url);
+    }
+
+    private String deleteAndReload(UUID attachmentId, UUID taskId, Model model) {
+        if (taskId == null) {
+            taskId = taskAttachmentService.findById(attachmentId).getTask().getId();
+        }
+        taskAttachmentService.deleteAttachment(attachmentId);
+        return getAttachments(taskId, model);
     }
 }

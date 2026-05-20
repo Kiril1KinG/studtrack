@@ -471,6 +471,8 @@
                     commentPending.appendChild(badge);
                 });
             };
+            const hasPendingCommentAttachments = () =>
+                !!(commentAttachmentIds && commentAttachmentIds.querySelector('input[name="attachmentIds"]'));
 
             const refreshAttachmentsList = async () => {
                 const taskId = commentForm?.dataset.taskId;
@@ -516,7 +518,6 @@
                     commentTextarea.classList.add("border-success");
                     setTimeout(() => commentTextarea.classList.remove("border-success"), 900);
                 }
-                await refreshAttachmentsList();
             };
 
             if (commentForm && commentAttachmentIds) {
@@ -561,7 +562,9 @@
                 });
                 if (!response.ok) throw new Error("Не удалось загрузить скриншот");
                 const uploaded = await response.json();
-                await refreshAttachmentsList();
+                if (!hasPendingCommentAttachments()) {
+                    await refreshAttachmentsList();
+                }
                 return Array.isArray(uploaded) ? uploaded : [];
             };
 
@@ -581,7 +584,8 @@
             document.addEventListener("paste", (event) => {
                 const active = document.activeElement;
                 const isCommentInput = active === commentTextarea
-                    || (active && active.classList && active.classList.contains("js-cr-comment-input"));
+                    || (active && active.classList && active.classList.contains("js-cr-comment-input"))
+                    || (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable));
                 if (isCommentInput) return;
                 if (!panel.classList.contains("show")) return;
                 const files = imageFilesFrom(event.clipboardData?.files);

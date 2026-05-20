@@ -27,9 +27,14 @@ public class TaskHistoryService {
 
     public String toHumanMessage(TaskHistory entry) {
         return switch (entry.getEventType()) {
-            case TASK_FIELD_CHANGED -> "изменил(а) " + fieldLabel(entry.getFieldName()) + ": "
-                    + valueLabel(entry.getFieldName(), entry.getOldValue()) + " -> "
-                    + valueLabel(entry.getFieldName(), entry.getNewValue());
+            case TASK_FIELD_CHANGED -> {
+                if ("attachments".equals(entry.getFieldName())) {
+                    yield "прикрепил(а) файл к задаче: " + safeName(entry.getNewValue());
+                }
+                yield "изменил(а) " + fieldLabel(entry.getFieldName()) + ": "
+                        + valueLabel(entry.getFieldName(), entry.getOldValue()) + " -> "
+                        + valueLabel(entry.getFieldName(), entry.getNewValue());
+            }
             case TASK_STATUS_CHANGED -> {
                 String oldStatusRaw = extractValue(entry.getDetailsJson(), "oldStatus");
                 String newStatusRaw = extractValue(entry.getDetailsJson(), "newStatus");
