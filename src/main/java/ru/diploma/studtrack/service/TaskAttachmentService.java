@@ -16,8 +16,11 @@ import ru.diploma.studtrack.repository.TaskAttachmentRepository;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -123,6 +126,29 @@ public class TaskAttachmentService {
 
         minioStorageService.delete(attachment.getStoredKey());
         taskAttachmentRepository.delete(attachment);
+    }
+
+    @Transactional
+    public void deleteCommentAttachments(Comment comment, List<UUID> attachmentIds) {
+        if (comment == null || attachmentIds == null || attachmentIds.isEmpty()) {
+            return;
+        }
+        Set<UUID> targetIds = attachmentIds.stream().collect(Collectors.toSet());
+        if (comment.getAttachments() == null || comment.getAttachments().isEmpty()) {
+            return;
+        }
+
+        Iterator<TaskAttachment> iterator = comment.getAttachments().iterator();
+        while (iterator.hasNext()) {
+            TaskAttachment attachment = iterator.next();
+            if (attachment.getId() == null || !targetIds.contains(attachment.getId())) {
+                continue;
+            }
+            iterator.remove();
+            attachment.setComment(null);
+            minioStorageService.delete(attachment.getStoredKey());
+            taskAttachmentRepository.delete(attachment);
+        }
     }
 
     public String getDownloadUrl(UUID attachmentId) {

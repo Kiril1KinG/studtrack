@@ -128,10 +128,27 @@ public class CommentService {
 
     @Transactional
     public Comment updateContent(UUID id, String content) {
+        return updateContent(id, content, List.of(), List.of());
+    }
+
+    @Transactional
+    public Comment updateContent(UUID id, String content, List<UUID> attachmentIds, List<UUID> removedAttachmentIds) {
         Comment comment = findById(id);
         checkAuthorship(comment);
         comment.setContent(content);
-        return commentRepository.save(comment);
+        taskAttachmentService.attachToComment(
+                comment.getTask().getId(),
+                comment,
+                attachmentIds != null ? attachmentIds : List.of()
+        );
+        taskAttachmentService.deleteCommentAttachments(
+                comment,
+                removedAttachmentIds != null ? removedAttachmentIds : List.of()
+        );
+        Comment saved = commentRepository.save(comment);
+        entityManager.flush();
+        entityManager.clear();
+        return commentRepository.findDetailedById(saved.getId()).orElse(saved);
     }
 
     @Transactional

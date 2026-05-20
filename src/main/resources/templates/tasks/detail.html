@@ -465,9 +465,56 @@
             const appendCommentPendingBadges = (uploaded) => {
                 if (!commentPending || !Array.isArray(uploaded)) return;
                 uploaded.forEach((item) => {
+                    const name = item?.originalName || "file";
+                    const isImage = typeof item?.contentType === "string" && item.contentType.startsWith("image/");
+                    const attachmentId = item?.id;
+                    const removePending = (id, container) => {
+                        if (!id || !commentAttachmentIds) return;
+                        commentAttachmentIds.querySelectorAll("input[name='attachmentIds']").forEach((node) => {
+                            if (node.value === id) node.remove();
+                        });
+                        container?.remove();
+                    };
+                    if (isImage && item?.id) {
+                        const card = document.createElement("div");
+                        card.className = "border rounded overflow-hidden bg-white position-relative";
+                        card.style.width = "120px";
+                        const img = document.createElement("img");
+                        img.src = `/tasks/attachments/${item.id}/url`;
+                        img.alt = name;
+                        img.style.width = "120px";
+                        img.style.height = "84px";
+                        img.style.objectFit = "cover";
+                        img.style.display = "block";
+                        const caption = document.createElement("span");
+                        caption.className = "d-block px-2 py-1 small text-truncate text-dark";
+                        caption.textContent = name;
+                        const removeBtn = document.createElement("button");
+                        removeBtn.type = "button";
+                        removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
+                        removeBtn.title = "Удалить вложение";
+                        removeBtn.innerHTML = "<i class='bi bi-trash'></i>";
+                        removeBtn.addEventListener("click", () => removePending(attachmentId, card));
+                        card.appendChild(img);
+                        card.appendChild(caption);
+                        card.appendChild(removeBtn);
+                        commentPending.appendChild(card);
+                        return;
+                    }
                     const badge = document.createElement("span");
-                    badge.className = "badge rounded-pill text-bg-secondary";
-                    badge.textContent = item?.originalName || "file";
+                    badge.className = "badge text-bg-light border d-inline-flex align-items-center gap-1";
+                    const text = document.createElement("span");
+                    text.className = "text-truncate";
+                    text.style.maxWidth = "180px";
+                    text.textContent = name;
+                    const removeBtn = document.createElement("button");
+                    removeBtn.type = "button";
+                    removeBtn.className = "btn btn-sm btn-link text-danger p-0";
+                    removeBtn.title = "Удалить вложение";
+                    removeBtn.innerHTML = "<i class='bi bi-trash'></i>";
+                    removeBtn.addEventListener("click", () => removePending(attachmentId, badge));
+                    badge.appendChild(text);
+                    badge.appendChild(removeBtn);
                     commentPending.appendChild(badge);
                 });
             };
@@ -651,10 +698,56 @@
                                         node.name = "attachmentIds";
                                         node.value = id;
                                         hidden.parentElement?.insertBefore(node, hidden.nextSibling);
-                                        const badge = document.createElement("span");
-                                        badge.className = "badge rounded-pill text-bg-secondary";
-                                        badge.textContent = uploaded[idx]?.originalName || "file";
-                                        pendingWrap?.appendChild(badge);
+                                        const item = uploaded[idx];
+                                        const name = item?.originalName || "file";
+                                        const isImage = typeof item?.contentType === "string" && item.contentType.startsWith("image/");
+                                        const removePending = (value, container) => {
+                                            formEl.querySelectorAll("input[name='attachmentIds']").forEach((n) => {
+                                                if (n.value === value) n.remove();
+                                            });
+                                            container?.remove();
+                                        };
+                                        if (isImage && item?.id && pendingWrap) {
+                                            const card = document.createElement("div");
+                                            card.className = "border rounded overflow-hidden bg-white position-relative";
+                                            card.style.width = "120px";
+                                            const img = document.createElement("img");
+                                            img.src = `/tasks/attachments/${item.id}/url`;
+                                            img.alt = name;
+                                            img.style.width = "120px";
+                                            img.style.height = "84px";
+                                            img.style.objectFit = "cover";
+                                            img.style.display = "block";
+                                            const caption = document.createElement("span");
+                                            caption.className = "d-block px-2 py-1 small text-truncate text-dark";
+                                            caption.textContent = name;
+                                            const removeBtn = document.createElement("button");
+                                            removeBtn.type = "button";
+                                            removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
+                                            removeBtn.title = "Удалить вложение";
+                                            removeBtn.innerHTML = "<i class='bi bi-trash'></i>";
+                                            removeBtn.addEventListener("click", () => removePending(id, card));
+                                            card.appendChild(img);
+                                            card.appendChild(caption);
+                                            card.appendChild(removeBtn);
+                                            pendingWrap.appendChild(card);
+                                        } else {
+                                            const badge = document.createElement("span");
+                                            badge.className = "badge text-bg-light border d-inline-flex align-items-center gap-1";
+                                            const text = document.createElement("span");
+                                            text.className = "text-truncate";
+                                            text.style.maxWidth = "180px";
+                                            text.textContent = name;
+                                            const removeBtn = document.createElement("button");
+                                            removeBtn.type = "button";
+                                            removeBtn.className = "btn btn-sm btn-link text-danger p-0";
+                                            removeBtn.title = "Удалить вложение";
+                                            removeBtn.innerHTML = "<i class='bi bi-trash'></i>";
+                                            removeBtn.addEventListener("click", () => removePending(id, badge));
+                                            badge.appendChild(text);
+                                            badge.appendChild(removeBtn);
+                                            pendingWrap?.appendChild(badge);
+                                        }
                                     });
                                 }
                             } catch (error) {
@@ -745,8 +838,170 @@
                 document.querySelectorAll(".js-cr-comment-input").forEach(bindCrCommentInput);
             };
 
+            const bindEditCommentForm = (formEl) => {
+                if (!formEl || formEl.dataset.editAttachmentsBound === "1") return;
+                formEl.dataset.editAttachmentsBound = "1";
+                const textarea = formEl.querySelector("textarea[name='content']");
+                const attachBtn = formEl.querySelector(".js-edit-comment-attach-btn");
+                const fileInput = formEl.querySelector(".js-edit-comment-file-input");
+                const pendingWrap = formEl.querySelector(".js-edit-comment-pending-attachments");
+                const attachmentIdsWrap = formEl.querySelector(".js-edit-comment-attachment-ids");
+                const removedIdsWrap = formEl.querySelector(".js-edit-comment-removed-attachment-ids");
+                if (!textarea || !attachmentIdsWrap || !removedIdsWrap) return;
+
+                const appendPendingBadges = (uploaded) => {
+                    if (!pendingWrap || !Array.isArray(uploaded)) return;
+                    uploaded.forEach((item) => {
+                        const name = item?.originalName || "file";
+                        const isImage = typeof item?.contentType === "string" && item.contentType.startsWith("image/");
+                        const attachmentId = item?.id;
+                        const removeById = (id, container) => {
+                            if (!id) return;
+                            attachmentIdsWrap.querySelectorAll("input[name='attachmentIds']").forEach((node) => {
+                                if (node.value === id) node.remove();
+                            });
+                            container?.remove();
+                        };
+                        if (isImage && item?.id) {
+                            const card = document.createElement("div");
+                            card.className = "border rounded overflow-hidden bg-white position-relative";
+                            card.style.width = "120px";
+                            const img = document.createElement("img");
+                            img.src = `/tasks/attachments/${item.id}/url`;
+                            img.alt = name;
+                            img.style.width = "120px";
+                            img.style.height = "84px";
+                            img.style.objectFit = "cover";
+                            img.style.display = "block";
+                            const caption = document.createElement("span");
+                            caption.className = "d-block px-2 py-1 small text-truncate text-dark";
+                            caption.textContent = name;
+                            const removeBtn = document.createElement("button");
+                            removeBtn.type = "button";
+                            removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
+                            removeBtn.title = "Удалить вложение";
+                            removeBtn.innerHTML = "<i class='bi bi-trash'></i>";
+                            removeBtn.addEventListener("click", () => removeById(attachmentId, card));
+                            card.appendChild(img);
+                            card.appendChild(caption);
+                            card.appendChild(removeBtn);
+                            pendingWrap.appendChild(card);
+                            return;
+                        }
+                        const chip = document.createElement("span");
+                        chip.className = "badge text-bg-light border d-inline-flex align-items-center gap-1";
+                        const text = document.createElement("span");
+                        text.className = "text-truncate";
+                        text.style.maxWidth = "180px";
+                        text.textContent = name;
+                        const removeBtn = document.createElement("button");
+                        removeBtn.type = "button";
+                        removeBtn.className = "btn btn-sm btn-link text-danger p-0";
+                        removeBtn.title = "Удалить вложение";
+                        removeBtn.innerHTML = "<i class='bi bi-trash'></i>";
+                        removeBtn.addEventListener("click", () => removeById(attachmentId, chip));
+                        chip.appendChild(text);
+                        chip.appendChild(removeBtn);
+                        pendingWrap.appendChild(chip);
+                    });
+                };
+
+                const uploadForEdit = async (files, imagesOnly = false) => {
+                    const taskId = commentForm?.dataset.taskId;
+                    if (!taskId) return;
+                    const selectedFiles = imagesOnly ? imageFilesFrom(files) : filesFrom(files);
+                    if (selectedFiles.length === 0) return;
+                    const formData = new FormData();
+                    selectedFiles.forEach((file, index) => {
+                        const fallbackName = `screenshot-${Date.now()}-${index + 1}.png`;
+                        formData.append("files", file, file.name || fallbackName);
+                    });
+                    const response = await fetch(`/api/tasks/${taskId}/attachments`, {
+                        method: "POST",
+                        body: formData
+                    });
+                    if (!response.ok) throw new Error("Не удалось загрузить файл");
+                    const uploaded = await response.json();
+                    const ids = (Array.isArray(uploaded) ? uploaded : []).map((item) => item.id).filter(Boolean);
+                    ids.forEach((id) => {
+                        const hidden = document.createElement("input");
+                        hidden.type = "hidden";
+                        hidden.name = "attachmentIds";
+                        hidden.value = id;
+                        attachmentIdsWrap.appendChild(hidden);
+                    });
+                    appendPendingBadges(uploaded);
+                    textarea.classList.add("border-success");
+                    setTimeout(() => textarea.classList.remove("border-success"), 900);
+                };
+
+                if (attachBtn && fileInput) {
+                    attachBtn.addEventListener("click", () => fileInput.click());
+                    fileInput.addEventListener("change", async () => {
+                        try {
+                            await uploadForEdit(fileInput.files, false);
+                        } catch (error) {
+                            alert(error.message || "Ошибка загрузки файла");
+                        } finally {
+                            fileInput.value = "";
+                        }
+                    });
+                }
+
+                formEl.querySelectorAll(".js-edit-remove-existing-attachment").forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        const id = btn.dataset.attachmentId;
+                        if (!id) return;
+                        const alreadyMarked = removedIdsWrap.querySelector(`input[name='removedAttachmentIds'][value='${id}']`);
+                        if (alreadyMarked) return;
+                        const hidden = document.createElement("input");
+                        hidden.type = "hidden";
+                        hidden.name = "removedAttachmentIds";
+                        hidden.value = id;
+                        removedIdsWrap.appendChild(hidden);
+                        const item = btn.closest(".js-edit-existing-attachment-item");
+                        if (item) item.remove();
+                    });
+                });
+
+                textarea.addEventListener("dragover", (event) => {
+                    event.preventDefault();
+                    textarea.classList.add("border-primary");
+                });
+                textarea.addEventListener("dragleave", () => {
+                    textarea.classList.remove("border-primary");
+                });
+                textarea.addEventListener("drop", async (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    textarea.classList.remove("border-primary");
+                    try {
+                        await uploadForEdit(event.dataTransfer?.files, true);
+                    } catch (error) {
+                        alert(error.message || "Ошибка загрузки файла");
+                    }
+                });
+                textarea.addEventListener("paste", async (event) => {
+                    const files = imageFilesFrom(event.clipboardData?.files);
+                    if (files.length === 0) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    try {
+                        await uploadForEdit(files, true);
+                    } catch (error) {
+                        alert(error.message || "Ошибка загрузки файла");
+                    }
+                });
+            };
+
+            const bindAllEditCommentForms = () => {
+                document.querySelectorAll("#comments-list form[hx-put^='/tasks/comments/']").forEach(bindEditCommentForm);
+            };
+
             bindAllCrInputs();
+            bindAllEditCommentForms();
             document.body.addEventListener("htmx:afterSwap", bindAllCrInputs);
+            document.body.addEventListener("htmx:afterSwap", bindAllEditCommentForms);
         })();
     </script>
 </main>

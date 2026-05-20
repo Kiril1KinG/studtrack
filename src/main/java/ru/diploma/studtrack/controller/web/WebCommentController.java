@@ -50,6 +50,7 @@ public class WebCommentController {
         Comment comment = commentService.findById(commentId);
         projectService.checkMembership(comment.getTask().getProject().getId());
         model.addAttribute("comment", comment);
+        model.addAttribute("taskId", comment.getTask().getId());
         return "fragments/comments :: editComment";
     }
 
@@ -65,7 +66,13 @@ public class WebCommentController {
     public String updateComment(@PathVariable UUID commentId,
                                 @Valid @ModelAttribute CommentUpdateRequest request,
                                 Model model) {
-        Comment comment = commentService.updateContent(commentId, request.getContent());
+        Comment existing = commentService.findById(commentId);
+        Comment comment = commentService.updateContent(
+                commentId,
+                request.getContent(),
+                request.getAttachmentIds(),
+                request.getRemovedAttachmentIds()
+        );
         model.addAttribute("comment", comment);
         return "fragments/comments :: singleComment";
     }
