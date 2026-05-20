@@ -88,9 +88,17 @@ public class WebAttachmentController {
     }
 
     private String deleteAndReload(UUID attachmentId, UUID taskId, Model model) {
+        TaskAttachment attachment = taskAttachmentService.findById(attachmentId);
         if (taskId == null) {
-            taskId = taskAttachmentService.findById(attachmentId).getTask().getId();
+            taskId = attachment.getTask().getId();
         }
+        taskHistoryService.recordFieldChange(
+                attachment.getTask(),
+                userService.getCurrentUser(),
+                "attachments",
+                attachment.getOriginalName(),
+                null
+        );
         taskAttachmentService.deleteAttachment(attachmentId);
         return getAttachments(taskId, model);
     }

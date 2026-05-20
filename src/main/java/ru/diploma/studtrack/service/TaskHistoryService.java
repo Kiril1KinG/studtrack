@@ -29,6 +29,10 @@ public class TaskHistoryService {
         return switch (entry.getEventType()) {
             case TASK_FIELD_CHANGED -> {
                 if ("attachments".equals(entry.getFieldName())) {
+                    if ((entry.getNewValue() == null || entry.getNewValue().isBlank())
+                            && entry.getOldValue() != null && !entry.getOldValue().isBlank()) {
+                        yield "удалил(а) файл из задачи: " + safeName(entry.getOldValue());
+                    }
                     yield "прикрепил(а) файл к задаче: " + safeName(entry.getNewValue());
                 }
                 yield "изменил(а) " + fieldLabel(entry.getFieldName()) + ": "
