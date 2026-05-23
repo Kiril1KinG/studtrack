@@ -479,11 +479,35 @@
             const imageFilesFrom = (fileList) =>
                 Array.from(fileList || []).filter((file) => file.type && file.type.startsWith("image/"));
             const filesFrom = (fileList) => Array.from(fileList || []).filter((file) => !!file);
+            const shortenMiddle = (value, max = 30, head = 14) => {
+                const text = String(value || "");
+                if (text.length <= max) return text;
+                const safeHead = Math.max(3, Math.min(head, max - 6));
+                const tail = Math.max(2, max - safeHead - 3);
+                return `${text.slice(0, safeHead)}...${text.slice(-tail)}`;
+            };
+            const shortenFileKeepingExtension = (value) => {
+                const text = String(value || "");
+                const max = 22;
+                if (text.length <= max) return text;
+                const dot = text.lastIndexOf(".");
+                if (dot <= 0 || dot === text.length - 1) {
+                    return shortenMiddle(text, max, 10);
+                }
+                const ext = text.slice(dot + 1);
+                const head = text.slice(0, dot);
+                const availableHead = max - ext.length - 4;
+                if (availableHead < 4 || head.length <= availableHead) {
+                    return text;
+                }
+                return `${head.slice(0, availableHead)}...${ext}`;
+            };
 
             const appendCommentPendingBadges = (uploaded) => {
                 if (!commentPending || !Array.isArray(uploaded)) return;
                 uploaded.forEach((item) => {
-                    const name = item?.originalName || "file";
+                    const fullName = item?.originalName || "file";
+                    const name = shortenFileKeepingExtension(fullName);
                     const isImage = typeof item?.contentType === "string" && item.contentType.startsWith("image/");
                     const attachmentId = item?.id;
                     const removePending = (id, container) => {
@@ -496,17 +520,18 @@
                     if (isImage && item?.id) {
                         const card = document.createElement("div");
                         card.className = "border rounded overflow-hidden bg-white position-relative";
-                        card.style.width = "120px";
+                        card.style.width = "140px";
                         const img = document.createElement("img");
                         img.src = `/tasks/attachments/${item.id}/url`;
                         img.alt = name;
-                        img.style.width = "120px";
-                        img.style.height = "84px";
+                        img.style.width = "140px";
+                        img.style.height = "96px";
                         img.style.objectFit = "cover";
                         img.style.display = "block";
                         const caption = document.createElement("span");
                         caption.className = "d-block px-2 py-1 small text-truncate text-dark";
                         caption.textContent = name;
+                        caption.title = fullName;
                         const timestamp = document.createElement("span");
                         timestamp.className = "d-block px-2 pb-1 small text-muted";
                         timestamp.textContent = new Date().toLocaleString("ru-RU", {
@@ -531,15 +556,16 @@
                     }
                     const badge = document.createElement("span");
                     badge.className = "border rounded overflow-hidden bg-white position-relative";
-                    badge.style.width = "120px";
+                    badge.style.width = "140px";
                     const iconWrap = document.createElement("div");
                     iconWrap.className = "d-flex align-items-center justify-content-center text-secondary";
-                    iconWrap.style.width = "120px";
-                    iconWrap.style.height = "84px";
+                    iconWrap.style.width = "140px";
+                    iconWrap.style.height = "96px";
                     iconWrap.innerHTML = "<i class='bi bi-file-earmark fs-4'></i>";
                     const text = document.createElement("span");
                     text.className = "d-block px-2 py-1 small text-truncate text-dark";
                     text.textContent = name;
+                    text.title = fullName;
                     const timestamp = document.createElement("span");
                     timestamp.className = "d-block px-2 pb-1 small text-muted";
                     timestamp.textContent = new Date().toLocaleString("ru-RU", {
@@ -743,7 +769,8 @@
                                         node.value = id;
                                         hidden.parentElement?.insertBefore(node, hidden.nextSibling);
                                         const item = uploaded[idx];
-                                        const name = item?.originalName || "file";
+                                        const fullName = item?.originalName || "file";
+                                        const name = shortenFileKeepingExtension(fullName);
                                         const isImage = typeof item?.contentType === "string" && item.contentType.startsWith("image/");
                                         const removePending = (value, container) => {
                                             formEl.querySelectorAll("input[name='attachmentIds']").forEach((n) => {
@@ -754,17 +781,18 @@
                                         if (isImage && item?.id && pendingWrap) {
                                             const card = document.createElement("div");
                                             card.className = "border rounded overflow-hidden bg-white position-relative";
-                                            card.style.width = "120px";
+                                            card.style.width = "140px";
                                             const img = document.createElement("img");
                                             img.src = `/tasks/attachments/${item.id}/url`;
                                             img.alt = name;
-                                            img.style.width = "120px";
-                                            img.style.height = "84px";
+                                            img.style.width = "140px";
+                                            img.style.height = "96px";
                                             img.style.objectFit = "cover";
                                             img.style.display = "block";
                                             const caption = document.createElement("span");
                                             caption.className = "d-block px-2 py-1 small text-truncate text-dark";
                                             caption.textContent = name;
+                                            caption.title = fullName;
                                             const timestamp = document.createElement("span");
                                             timestamp.className = "d-block px-2 pb-1 small text-muted";
                                             timestamp.textContent = new Date().toLocaleString("ru-RU", {
@@ -788,15 +816,16 @@
                                         } else {
                                             const badge = document.createElement("span");
                                             badge.className = "border rounded overflow-hidden bg-white position-relative";
-                                            badge.style.width = "120px";
+                                            badge.style.width = "140px";
                                             const iconWrap = document.createElement("div");
                                             iconWrap.className = "d-flex align-items-center justify-content-center text-secondary";
-                                            iconWrap.style.width = "120px";
-                                            iconWrap.style.height = "84px";
+                                            iconWrap.style.width = "140px";
+                                            iconWrap.style.height = "96px";
                                             iconWrap.innerHTML = "<i class='bi bi-file-earmark fs-4'></i>";
                                             const text = document.createElement("span");
                                             text.className = "d-block px-2 py-1 small text-truncate text-dark";
                                             text.textContent = name;
+                                            text.title = fullName;
                                             const timestamp = document.createElement("span");
                                             timestamp.className = "d-block px-2 pb-1 small text-muted";
                                             timestamp.textContent = new Date().toLocaleString("ru-RU", {
@@ -922,7 +951,8 @@
                 const appendPendingBadges = (uploaded) => {
                     if (!pendingWrap || !Array.isArray(uploaded)) return;
                     uploaded.forEach((item) => {
-                        const name = item?.originalName || "file";
+                        const fullName = item?.originalName || "file";
+                        const name = shortenFileKeepingExtension(fullName);
                         const isImage = typeof item?.contentType === "string" && item.contentType.startsWith("image/");
                         const attachmentId = item?.id;
                         const removeById = (id, container) => {
@@ -935,17 +965,18 @@
                         if (isImage && item?.id) {
                             const card = document.createElement("div");
                             card.className = "border rounded overflow-hidden bg-white position-relative";
-                            card.style.width = "120px";
+                            card.style.width = "140px";
                             const img = document.createElement("img");
                             img.src = `/tasks/attachments/${item.id}/url`;
                             img.alt = name;
-                            img.style.width = "120px";
-                            img.style.height = "84px";
+                            img.style.width = "140px";
+                            img.style.height = "96px";
                             img.style.objectFit = "cover";
                             img.style.display = "block";
                             const caption = document.createElement("span");
                             caption.className = "d-block px-2 py-1 small text-truncate text-dark";
                             caption.textContent = name;
+                            caption.title = fullName;
                         const timestamp = document.createElement("span");
                         timestamp.className = "d-block px-2 pb-1 small text-muted";
                         timestamp.textContent = new Date().toLocaleString("ru-RU", {
@@ -970,15 +1001,16 @@
                         }
                         const chip = document.createElement("span");
                         chip.className = "border rounded overflow-hidden bg-white position-relative";
-                        chip.style.width = "120px";
+                        chip.style.width = "140px";
                         const iconWrap = document.createElement("div");
                         iconWrap.className = "d-flex align-items-center justify-content-center text-secondary";
-                        iconWrap.style.width = "120px";
-                        iconWrap.style.height = "84px";
+                        iconWrap.style.width = "140px";
+                        iconWrap.style.height = "96px";
                         iconWrap.innerHTML = "<i class='bi bi-file-earmark fs-4'></i>";
                         const text = document.createElement("span");
                         text.className = "d-block px-2 py-1 small text-truncate text-dark";
                         text.textContent = name;
+                        text.title = fullName;
                         const timestamp = document.createElement("span");
                         timestamp.className = "d-block px-2 pb-1 small text-muted";
                         timestamp.textContent = new Date().toLocaleString("ru-RU", {

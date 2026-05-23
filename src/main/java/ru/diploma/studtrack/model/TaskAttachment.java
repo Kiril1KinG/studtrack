@@ -73,4 +73,51 @@ public class TaskAttachment {
     @CreationTimestamp
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private LocalDateTime uploadedAt;
+
+    public String getDisplayName() {
+        if (type == ArtifactType.LINK) {
+            if (linkTitle != null && !linkTitle.isBlank()) {
+                return linkTitle;
+            }
+            return linkUrl;
+        }
+        return originalName;
+    }
+
+    public String getDisplayNameShort() {
+        String value = getDisplayName();
+        if (value == null || value.isBlank()) {
+            return "file";
+        }
+        if (type == ArtifactType.FILE) {
+            return shortenKeepingExtension(value, 22, 10);
+        }
+        return shortenMiddle(value, 34, 16);
+    }
+
+    private String shortenKeepingExtension(String value, int maxLen, int headLen) {
+        int dot = value.lastIndexOf('.');
+        if (dot <= 0 || dot == value.length() - 1 || value.length() <= maxLen) {
+            return shortenMiddle(value, maxLen, headLen);
+        }
+        String ext = value.substring(dot + 1);
+        if (ext.length() >= maxLen - 4) {
+            return shortenMiddle(value, maxLen, headLen);
+        }
+        String head = value.substring(0, dot);
+        int availableHead = maxLen - ext.length() - 4;
+        if (availableHead < 4 || head.length() <= availableHead) {
+            return value;
+        }
+        return head.substring(0, availableHead) + "..." + ext;
+    }
+
+    private String shortenMiddle(String value, int maxLen, int headLen) {
+        if (value.length() <= maxLen) {
+            return value;
+        }
+        int safeHeadLen = Math.max(3, Math.min(headLen, maxLen - 6));
+        int tailLen = Math.max(2, maxLen - safeHeadLen - 3);
+        return value.substring(0, safeHeadLen) + "..." + value.substring(value.length() - tailLen);
+    }
 }

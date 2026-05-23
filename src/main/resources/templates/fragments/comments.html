@@ -22,12 +22,13 @@
                 <a th:each="att : ${comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')]}"
                    th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
                    class="d-inline-block border rounded overflow-hidden text-decoration-none bg-light"
-                   style="width: 120px;">
+                   style="width: 140px;">
                     <img th:src="@{/tasks/attachments/{id}/url(id=${att.id})}"
                          th:alt="${att.originalName}"
-                         style="width: 120px; height: 90px; object-fit: cover; display: block;">
+                         style="width: 140px; height: 96px; object-fit: cover; display: block;">
                     <span class="d-block px-2 py-1 small text-truncate text-dark"
-                          th:text="${att.originalName}">image.png</span>
+                          th:text="${att.displayNameShort}"
+                          th:title="${att.displayName}">image.png</span>
                     <span class="d-block px-2 pb-1 small text-muted"
                           th:if="${att.uploadedAt != null}"
                           th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
@@ -39,13 +40,14 @@
                 <a th:each="att : ${comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')]}"
                    th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
                    class="d-inline-block border rounded overflow-hidden text-decoration-none bg-light"
-                   style="width: 120px;">
+                   style="width: 140px;">
                     <div class="d-flex align-items-center justify-content-center text-secondary"
-                         style="width: 120px; height: 90px;">
+                         style="width: 140px; height: 96px;">
                         <i class="bi bi-file-earmark fs-4"></i>
                     </div>
                     <span class="d-block px-2 py-1 small text-truncate text-dark"
-                          th:text="${att.originalName}">file</span>
+                          th:text="${att.displayNameShort}"
+                          th:title="${att.displayName}">file</span>
                     <span class="d-block px-2 pb-1 small text-muted"
                           th:if="${att.uploadedAt != null}"
                           th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
@@ -72,13 +74,14 @@
                      th:if="${!comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')].isEmpty()}">
                     <div th:each="att : ${comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')]}"
                          class="js-edit-existing-attachment-item border rounded overflow-hidden bg-white position-relative"
-                         style="width: 120px;">
+                         style="width: 140px;">
                         <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}" class="text-decoration-none">
                             <img th:src="@{/tasks/attachments/{id}/url(id=${att.id})}"
                                  th:alt="${att.originalName}"
-                                 style="width: 120px; height: 84px; object-fit: cover; display: block;">
+                                 style="width: 140px; height: 96px; object-fit: cover; display: block;">
                             <span class="d-block px-2 py-1 small text-truncate text-dark"
-                                  th:text="${att.originalName}">image.png</span>
+                                  th:text="${att.displayNameShort}"
+                                  th:title="${att.displayName}">image.png</span>
                             <span class="d-block px-2 pb-1 small text-muted"
                                   th:if="${att.uploadedAt != null}"
                                   th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
@@ -95,14 +98,15 @@
                      th:if="${!comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')].isEmpty()}">
                     <div th:each="att : ${comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')]}"
                          class="js-edit-existing-attachment-item border rounded overflow-hidden bg-white position-relative"
-                         style="width: 120px;">
+                         style="width: 140px;">
                         <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}" class="text-decoration-none">
                             <div class="d-flex align-items-center justify-content-center text-secondary"
-                                 style="width: 120px; height: 84px;">
+                                 style="width: 140px; height: 96px;">
                                 <i class="bi bi-file-earmark fs-4"></i>
                             </div>
                             <span class="d-block px-2 py-1 small text-truncate text-dark"
-                                  th:text="${att.originalName}">file</span>
+                                  th:text="${att.displayNameShort}"
+                                  th:title="${att.displayName}">file</span>
                             <span class="d-block px-2 pb-1 small text-muted"
                                   th:if="${att.uploadedAt != null}"
                                   th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
