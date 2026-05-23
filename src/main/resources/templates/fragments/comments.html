@@ -28,6 +28,9 @@
                          style="width: 120px; height: 90px; object-fit: cover; display: block;">
                     <span class="d-block px-2 py-1 small text-truncate text-dark"
                           th:text="${att.originalName}">image.png</span>
+                    <span class="d-block px-2 pb-1 small text-muted"
+                          th:if="${att.uploadedAt != null}"
+                          th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
                 </a>
             </div>
 
@@ -43,6 +46,9 @@
                     </div>
                     <span class="d-block px-2 py-1 small text-truncate text-dark"
                           th:text="${att.originalName}">file</span>
+                    <span class="d-block px-2 pb-1 small text-muted"
+                          th:if="${att.uploadedAt != null}"
+                          th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
                 </a>
             </div>
         </div>
@@ -73,6 +79,9 @@
                                  style="width: 120px; height: 84px; object-fit: cover; display: block;">
                             <span class="d-block px-2 py-1 small text-truncate text-dark"
                                   th:text="${att.originalName}">image.png</span>
+                            <span class="d-block px-2 pb-1 small text-muted"
+                                  th:if="${att.uploadedAt != null}"
+                                  th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
                         </a>
                         <button type="button"
                                 class="btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1 js-edit-remove-existing-attachment"
@@ -94,6 +103,9 @@
                             </div>
                             <span class="d-block px-2 py-1 small text-truncate text-dark"
                                   th:text="${att.originalName}">file</span>
+                            <span class="d-block px-2 pb-1 small text-muted"
+                                  th:if="${att.uploadedAt != null}"
+                                  th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
                         </a>
                         <button type="button"
                                 class="btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1 js-edit-remove-existing-attachment"

@@ -18,6 +18,9 @@
                             <div class="text-truncate"
                                  th:text="${att.linkTitle != null && !att.linkTitle.isBlank() ? att.linkTitle : att.linkUrl}">link</div>
                             <div class="text-muted text-truncate" th:text="${att.linkUrl}">url</div>
+                            <div class="text-muted"
+                                 th:if="${att.uploadedAt != null}"
+                                 th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</div>
                         </div>
                     </a>
                 </th:block>
@@ -39,6 +42,9 @@
                         <div class="text-truncate" th:text="${att.originalName}">file</div>
                         <div class="text-muted"
                              th:text="${#numbers.formatDecimal((att.size != null ? att.size : 0) / 1024.0, 1, 1) + ' KB'}">0 KB</div>
+                        <div class="text-muted"
+                             th:if="${att.uploadedAt != null}"
+                             th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</div>
                     </div>
                 </a>
                 <form th:if="${att.uploadedBy.id == currentUserId || isOwner}"

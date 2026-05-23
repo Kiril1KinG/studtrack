@@ -507,6 +507,15 @@
                         const caption = document.createElement("span");
                         caption.className = "d-block px-2 py-1 small text-truncate text-dark";
                         caption.textContent = name;
+                        const timestamp = document.createElement("span");
+                        timestamp.className = "d-block px-2 pb-1 small text-muted";
+                        timestamp.textContent = new Date().toLocaleString("ru-RU", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                        });
                         const removeBtn = document.createElement("button");
                         removeBtn.type = "button";
                         removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
@@ -515,6 +524,7 @@
                         removeBtn.addEventListener("click", () => removePending(attachmentId, card));
                         card.appendChild(img);
                         card.appendChild(caption);
+                        card.appendChild(timestamp);
                         card.appendChild(removeBtn);
                         commentPending.appendChild(card);
                         return;
@@ -530,6 +540,15 @@
                     const text = document.createElement("span");
                     text.className = "d-block px-2 py-1 small text-truncate text-dark";
                     text.textContent = name;
+                    const timestamp = document.createElement("span");
+                    timestamp.className = "d-block px-2 pb-1 small text-muted";
+                    timestamp.textContent = new Date().toLocaleString("ru-RU", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    });
                     const removeBtn = document.createElement("button");
                     removeBtn.type = "button";
                     removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
@@ -538,6 +557,7 @@
                     removeBtn.addEventListener("click", () => removePending(attachmentId, badge));
                     badge.appendChild(iconWrap);
                     badge.appendChild(text);
+                    badge.appendChild(timestamp);
                     badge.appendChild(removeBtn);
                     commentPending.appendChild(badge);
                 });
@@ -745,6 +765,15 @@
                                             const caption = document.createElement("span");
                                             caption.className = "d-block px-2 py-1 small text-truncate text-dark";
                                             caption.textContent = name;
+                                            const timestamp = document.createElement("span");
+                                            timestamp.className = "d-block px-2 pb-1 small text-muted";
+                                            timestamp.textContent = new Date().toLocaleString("ru-RU", {
+                                                day: "2-digit",
+                                                month: "2-digit",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit"
+                                            });
                                             const removeBtn = document.createElement("button");
                                             removeBtn.type = "button";
                                             removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
@@ -753,6 +782,7 @@
                                             removeBtn.addEventListener("click", () => removePending(id, card));
                                             card.appendChild(img);
                                             card.appendChild(caption);
+                                            card.appendChild(timestamp);
                                             card.appendChild(removeBtn);
                                             pendingWrap.appendChild(card);
                                         } else {
@@ -767,6 +797,15 @@
                                             const text = document.createElement("span");
                                             text.className = "d-block px-2 py-1 small text-truncate text-dark";
                                             text.textContent = name;
+                                            const timestamp = document.createElement("span");
+                                            timestamp.className = "d-block px-2 pb-1 small text-muted";
+                                            timestamp.textContent = new Date().toLocaleString("ru-RU", {
+                                                day: "2-digit",
+                                                month: "2-digit",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit"
+                                            });
                                             const removeBtn = document.createElement("button");
                                             removeBtn.type = "button";
                                             removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
@@ -775,6 +814,7 @@
                                             removeBtn.addEventListener("click", () => removePending(id, badge));
                                             badge.appendChild(iconWrap);
                                             badge.appendChild(text);
+                                            badge.appendChild(timestamp);
                                             badge.appendChild(removeBtn);
                                             pendingWrap?.appendChild(badge);
                                         }
@@ -906,6 +946,15 @@
                             const caption = document.createElement("span");
                             caption.className = "d-block px-2 py-1 small text-truncate text-dark";
                             caption.textContent = name;
+                        const timestamp = document.createElement("span");
+                        timestamp.className = "d-block px-2 pb-1 small text-muted";
+                        timestamp.textContent = new Date().toLocaleString("ru-RU", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                        });
                             const removeBtn = document.createElement("button");
                             removeBtn.type = "button";
                             removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
@@ -914,6 +963,7 @@
                             removeBtn.addEventListener("click", () => removeById(attachmentId, card));
                             card.appendChild(img);
                             card.appendChild(caption);
+                        card.appendChild(timestamp);
                             card.appendChild(removeBtn);
                             pendingWrap.appendChild(card);
                             return;
@@ -929,6 +979,15 @@
                         const text = document.createElement("span");
                         text.className = "d-block px-2 py-1 small text-truncate text-dark";
                         text.textContent = name;
+                        const timestamp = document.createElement("span");
+                        timestamp.className = "d-block px-2 pb-1 small text-muted";
+                        timestamp.textContent = new Date().toLocaleString("ru-RU", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                        });
                         const removeBtn = document.createElement("button");
                         removeBtn.type = "button";
                         removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
@@ -937,6 +996,7 @@
                         removeBtn.addEventListener("click", () => removeById(attachmentId, chip));
                         chip.appendChild(iconWrap);
                         chip.appendChild(text);
+                        chip.appendChild(timestamp);
                         chip.appendChild(removeBtn);
                         pendingWrap.appendChild(chip);
                     });
