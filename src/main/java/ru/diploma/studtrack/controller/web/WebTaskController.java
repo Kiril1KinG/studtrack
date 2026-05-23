@@ -123,7 +123,7 @@ public class WebTaskController {
         List<Comment> comments = commentService.getByTask(id);
         List<TaskReviewRound> reviewRounds = reviewRoundService.getRoundsForView(id);
         List<TaskHistory> historyEntries = taskHistoryService.getByTask(id);
-        List<TaskAttachment> attachments = taskAttachmentService.getAttachments(id);
+        List<TaskAttachment> attachments = taskAttachmentService.getTaskArtifacts(id);
         Map<UUID, String> historyMessageById = new LinkedHashMap<>();
         historyEntries.forEach(entry -> historyMessageById.put(entry.getId(), taskHistoryService.toHumanMessage(entry)));
         List<User> projectMembers = projectService.getMembers(projectId)

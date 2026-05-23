@@ -97,7 +97,7 @@
                             aria-expanded="false"
                             aria-controls="attachments-panel">
                         <i class="bi bi-paperclip me-1"></i>
-                        Файлы
+                        Файлы и ссылки
                         <span class="badge text-bg-secondary ms-1" th:text="${attachments != null ? attachments.size() : 0}">0</span>
                     </button>
                 </div>
@@ -123,6 +123,24 @@
                                     <input class="form-control" type="file" name="files" multiple required id="attachments-file-input">
                                     <button class="btn btn-outline-primary" type="submit">
                                         <i class="bi bi-upload me-1"></i> Добавить
+                                    </button>
+                                </div>
+                            </form>
+                            <form th:action="@{/tasks/{id}/links(id=${task.id})}"
+                                  method="post"
+                                  th:attr="hx-post=@{/tasks/{id}/links(id=${task.id})}"
+                                  hx-target="#attachments-list"
+                                  hx-swap="outerHTML"
+                                  hx-on::after-request="this.reset()"
+                                  class="mb-3">
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-link-45deg"></i>
+                                    </span>
+                                    <input class="form-control" type="url" name="url" placeholder="https://..." required>
+                                    <input class="form-control" type="text" name="title" placeholder="Название ссылки (необязательно)">
+                                    <button class="btn btn-outline-primary" type="submit">
+                                        <i class="bi bi-plus-lg me-1"></i> Добавить ссылку
                                     </button>
                                 </div>
                             </form>
@@ -502,17 +520,23 @@
                         return;
                     }
                     const badge = document.createElement("span");
-                    badge.className = "badge text-bg-light border d-inline-flex align-items-center gap-1";
+                    badge.className = "border rounded overflow-hidden bg-white position-relative";
+                    badge.style.width = "120px";
+                    const iconWrap = document.createElement("div");
+                    iconWrap.className = "d-flex align-items-center justify-content-center text-secondary";
+                    iconWrap.style.width = "120px";
+                    iconWrap.style.height = "84px";
+                    iconWrap.innerHTML = "<i class='bi bi-file-earmark fs-4'></i>";
                     const text = document.createElement("span");
-                    text.className = "text-truncate";
-                    text.style.maxWidth = "180px";
+                    text.className = "d-block px-2 py-1 small text-truncate text-dark";
                     text.textContent = name;
                     const removeBtn = document.createElement("button");
                     removeBtn.type = "button";
-                    removeBtn.className = "btn btn-sm btn-link text-danger p-0";
+                    removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
                     removeBtn.title = "Удалить вложение";
                     removeBtn.innerHTML = "<i class='bi bi-trash'></i>";
                     removeBtn.addEventListener("click", () => removePending(attachmentId, badge));
+                    badge.appendChild(iconWrap);
                     badge.appendChild(text);
                     badge.appendChild(removeBtn);
                     commentPending.appendChild(badge);
@@ -733,17 +757,23 @@
                                             pendingWrap.appendChild(card);
                                         } else {
                                             const badge = document.createElement("span");
-                                            badge.className = "badge text-bg-light border d-inline-flex align-items-center gap-1";
+                                            badge.className = "border rounded overflow-hidden bg-white position-relative";
+                                            badge.style.width = "120px";
+                                            const iconWrap = document.createElement("div");
+                                            iconWrap.className = "d-flex align-items-center justify-content-center text-secondary";
+                                            iconWrap.style.width = "120px";
+                                            iconWrap.style.height = "84px";
+                                            iconWrap.innerHTML = "<i class='bi bi-file-earmark fs-4'></i>";
                                             const text = document.createElement("span");
-                                            text.className = "text-truncate";
-                                            text.style.maxWidth = "180px";
+                                            text.className = "d-block px-2 py-1 small text-truncate text-dark";
                                             text.textContent = name;
                                             const removeBtn = document.createElement("button");
                                             removeBtn.type = "button";
-                                            removeBtn.className = "btn btn-sm btn-link text-danger p-0";
+                                            removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
                                             removeBtn.title = "Удалить вложение";
                                             removeBtn.innerHTML = "<i class='bi bi-trash'></i>";
                                             removeBtn.addEventListener("click", () => removePending(id, badge));
+                                            badge.appendChild(iconWrap);
                                             badge.appendChild(text);
                                             badge.appendChild(removeBtn);
                                             pendingWrap?.appendChild(badge);
@@ -889,17 +919,23 @@
                             return;
                         }
                         const chip = document.createElement("span");
-                        chip.className = "badge text-bg-light border d-inline-flex align-items-center gap-1";
+                        chip.className = "border rounded overflow-hidden bg-white position-relative";
+                        chip.style.width = "120px";
+                        const iconWrap = document.createElement("div");
+                        iconWrap.className = "d-flex align-items-center justify-content-center text-secondary";
+                        iconWrap.style.width = "120px";
+                        iconWrap.style.height = "84px";
+                        iconWrap.innerHTML = "<i class='bi bi-file-earmark fs-4'></i>";
                         const text = document.createElement("span");
-                        text.className = "text-truncate";
-                        text.style.maxWidth = "180px";
+                        text.className = "d-block px-2 py-1 small text-truncate text-dark";
                         text.textContent = name;
                         const removeBtn = document.createElement("button");
                         removeBtn.type = "button";
-                        removeBtn.className = "btn btn-sm btn-link text-danger p-0";
+                        removeBtn.className = "btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1";
                         removeBtn.title = "Удалить вложение";
                         removeBtn.innerHTML = "<i class='bi bi-trash'></i>";
                         removeBtn.addEventListener("click", () => removeById(attachmentId, chip));
+                        chip.appendChild(iconWrap);
                         chip.appendChild(text);
                         chip.appendChild(removeBtn);
                         pendingWrap.appendChild(chip);

@@ -35,9 +35,14 @@
                  th:if="${!comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')].isEmpty()}">
                 <a th:each="att : ${comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')]}"
                    th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
-                   class="badge rounded-pill text-bg-light text-decoration-none border">
-                    <i class="bi bi-paperclip me-1"></i>
-                    <span th:text="${att.originalName}">file</span>
+                   class="d-inline-block border rounded overflow-hidden text-decoration-none bg-light"
+                   style="width: 120px;">
+                    <div class="d-flex align-items-center justify-content-center text-secondary"
+                         style="width: 120px; height: 90px;">
+                        <i class="bi bi-file-earmark fs-4"></i>
+                    </div>
+                    <span class="d-block px-2 py-1 small text-truncate text-dark"
+                          th:text="${att.originalName}">file</span>
                 </a>
             </div>
         </div>
@@ -80,10 +85,18 @@
                 <div class="d-flex flex-wrap gap-2 mb-2"
                      th:if="${!comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')].isEmpty()}">
                     <div th:each="att : ${comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')]}"
-                         class="js-edit-existing-attachment-item badge text-bg-light border d-inline-flex align-items-center gap-1">
-                        <span class="text-truncate" style="max-width: 200px;" th:text="${att.originalName}">file</span>
+                         class="js-edit-existing-attachment-item border rounded overflow-hidden bg-white position-relative"
+                         style="width: 120px;">
+                        <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}" class="text-decoration-none">
+                            <div class="d-flex align-items-center justify-content-center text-secondary"
+                                 style="width: 120px; height: 84px;">
+                                <i class="bi bi-file-earmark fs-4"></i>
+                            </div>
+                            <span class="d-block px-2 py-1 small text-truncate text-dark"
+                                  th:text="${att.originalName}">file</span>
+                        </a>
                         <button type="button"
-                                class="btn btn-sm btn-link text-danger p-0 js-edit-remove-existing-attachment"
+                                class="btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1 js-edit-remove-existing-attachment"
                                 th:attr="data-attachment-id=${att.id}"
                                 title="Удалить вложение">
                             <i class="bi bi-trash"></i>

@@ -26,7 +26,7 @@ public class AttachmentController {
 
     @GetMapping("/{taskId}/attachments")
     public ResponseEntity<List<AttachmentResponse>> getAttachments(@PathVariable UUID taskId) {
-        List<AttachmentResponse> response = taskAttachmentService.getAttachments(taskId).stream()
+        List<AttachmentResponse> response = taskAttachmentService.getTaskArtifacts(taskId).stream()
                 .map(this::toResponse)
                 .toList();
         return ResponseEntity.ok(response);
@@ -40,6 +40,14 @@ public class AttachmentController {
                 .map(file -> toResponse(taskAttachmentService.addAttachment(taskId, file)))
                 .toList();
         return ResponseEntity.ok(created);
+    }
+
+    @PostMapping("/{taskId}/links")
+    public ResponseEntity<AttachmentResponse> addLink(@PathVariable UUID taskId,
+                                                      @RequestParam("url") String url,
+                                                      @RequestParam(name = "title", required = false) String title) {
+        TaskAttachment created = taskAttachmentService.addLink(taskId, url, title);
+        return ResponseEntity.ok(toResponse(created));
     }
 
     @DeleteMapping("/attachments/{attachmentId}")
@@ -62,6 +70,9 @@ public class AttachmentController {
                 .originalName(attachment.getOriginalName())
                 .contentType(attachment.getContentType())
                 .size(attachment.getSize())
+                .type(attachment.getType())
+                .linkUrl(attachment.getLinkUrl())
+                .linkTitle(attachment.getLinkTitle())
                 .uploadedAt(attachment.getUploadedAt())
                 .build();
     }

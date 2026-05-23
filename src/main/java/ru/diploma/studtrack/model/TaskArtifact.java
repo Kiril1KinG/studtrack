@@ -28,7 +28,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskAttachment {
+public class TaskArtifact {
 
     @Id
     @GeneratedValue
@@ -45,24 +45,24 @@ public class TaskAttachment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploaded_by", nullable = false)
-    private User uploadedBy;
+    private User createdBy;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "artifact_type", nullable = false, length = 20)
     @Builder.Default
     private ArtifactType type = ArtifactType.FILE;
 
-    @Column(name = "original_name", nullable = false, length = 300)
+    @Column(name = "original_name", length = 300)
     private String originalName;
 
-    @Column(name = "stored_key", nullable = false, unique = true, length = 500)
+    @Column(name = "stored_key", unique = true, length = 500)
     private String storedKey;
 
     @Column(name = "content_type", length = 120)
     private String contentType;
 
-    @Column(name = "size_bytes", nullable = false)
-    private long size;
+    @Column(name = "size_bytes")
+    private Long size;
 
     @Column(name = "link_url", length = 2000)
     private String linkUrl;
@@ -72,5 +72,5 @@ public class TaskAttachment {
 
     @CreationTimestamp
     @Column(name = "uploaded_at", nullable = false, updatable = false)
-    private LocalDateTime uploadedAt;
+    private LocalDateTime createdAt;
 }

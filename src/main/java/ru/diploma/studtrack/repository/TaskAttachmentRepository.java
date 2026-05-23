@@ -2,6 +2,7 @@ package ru.diploma.studtrack.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import ru.diploma.studtrack.model.ArtifactType;
 import ru.diploma.studtrack.model.TaskAttachment;
 
 import java.util.List;
@@ -12,6 +13,8 @@ public interface TaskAttachmentRepository extends JpaRepository<TaskAttachment, 
 
     List<TaskAttachment> findByTaskIdOrderByUploadedAtDesc(UUID taskId);
     List<TaskAttachment> findByTaskIdAndCommentIsNullOrderByUploadedAtDesc(UUID taskId);
+    List<TaskAttachment> findByTaskIdAndCommentIsNullAndTypeOrderByUploadedAtDesc(UUID taskId, ArtifactType type);
+    List<TaskAttachment> findByTaskIdAndCommentIsNullAndTypeInOrderByUploadedAtDesc(UUID taskId, List<ArtifactType> types);
 
     List<TaskAttachment> findByIdIn(List<UUID> ids);
 }

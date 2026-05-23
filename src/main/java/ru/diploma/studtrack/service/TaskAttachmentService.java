@@ -5,8 +5,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.diploma.studtrack.exception.AccessDeniedException;
-import ru.diploma.studtrack.exception.NotFoundException;
 import ru.diploma.studtrack.exception.InvalidStateException;
+import ru.diploma.studtrack.exception.NotFoundException;
+import ru.diploma.studtrack.model.ArtifactType;
 import ru.diploma.studtrack.model.Comment;
 import ru.diploma.studtrack.model.Task;
 import ru.diploma.studtrack.model.TaskAttachment;
@@ -14,6 +15,8 @@ import ru.diploma.studtrack.model.User;
 import ru.diploma.studtrack.repository.TaskAttachmentRepository;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Iterator;
@@ -60,6 +63,7 @@ public class TaskAttachmentService {
         TaskAttachment attachment = TaskAttachment.builder()
                 .task(task)
                 .uploadedBy(currentUser)
+                .type(ArtifactType.FILE)
                 .originalName(file.getOriginalFilename() != null ? file.getOriginalFilename() : "file")
                 .storedKey(key)
                 .contentType(file.getContentType())
@@ -68,7 +72,42 @@ public class TaskAttachmentService {
         return taskAttachmentRepository.save(attachment);
     }
 
+    @Transactional
+    public TaskAttachment addLink(UUID taskId, String url, String title) {
+        Task task = taskService.findById(taskId);
+        projectService.checkMembership(task.getProject().getId());
+        User currentUser = userService.getCurrentUser();
+
+        String normalized = normalizeUrl(url);
+        if (normalized == null) {
+            throw new IllegalArgumentException("Ссылка должна быть в формате http/https");
+        }
+
+        String trimmedTitle = title == null ? null : title.trim();
+        TaskAttachment link = TaskAttachment.builder()
+                .task(task)
+                .uploadedBy(currentUser)
+                .type(ArtifactType.LINK)
+                .linkUrl(normalized)
+                .linkTitle((trimmedTitle == null || trimmedTitle.isBlank()) ? null : trimmedTitle)
+                .originalName((trimmedTitle == null || trimmedTitle.isBlank()) ? normalized : trimmedTitle)
+                .contentType("text/uri-list")
+                .size(0L)
+                .build();
+        return taskAttachmentRepository.save(link);
+    }
+
     public List<TaskAttachment> getAttachments(UUID taskId) {
+        return getFileAttachments(taskId);
+    }
+
+    public List<TaskAttachment> getFileAttachments(UUID taskId) {
+        Task task = taskService.findById(taskId);
+        projectService.checkMembership(task.getProject().getId());
+        return taskAttachmentRepository.findByTaskIdAndCommentIsNullAndTypeOrderByUploadedAtDesc(taskId, ArtifactType.FILE);
+    }
+
+    public List<TaskAttachment> getTaskArtifacts(UUID taskId) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
         return taskAttachmentRepository.findByTaskIdAndCommentIsNullOrderByUploadedAtDesc(taskId);
@@ -94,6 +133,9 @@ public class TaskAttachmentService {
         for (TaskAttachment attachment : attachments) {
             if (!attachment.getTask().getId().equals(taskId)) {
                 throw new InvalidStateException("Нельзя привязать вложение", "вложение относится к другой задаче", "прикрепите файл в текущей задаче");
+            }
+            if (attachment.getType() != ArtifactType.FILE) {
+                throw new InvalidStateException("Нельзя привязать вложение", "к комментарию можно прикрепить только файл", "используйте файл вместо ссылки");
             }
             if (attachment.getComment() != null) {
                 throw new InvalidStateException("Нельзя привязать вложение", "вложение уже прикреплено к другому комментарию", "загрузите новый файл");
@@ -124,7 +166,11 @@ public class TaskAttachmentService {
             throw new AccessDeniedException("Удалить файл может только автор загрузки или владелец проекта");
         }
 
-        minioStorageService.delete(attachment.getStoredKey());
+        if (attachment.getType() == ArtifactType.FILE
+                && attachment.getStoredKey() != null
+                && !attachment.getStoredKey().isBlank()) {
+            minioStorageService.delete(attachment.getStoredKey());
+        }
         taskAttachmentRepository.delete(attachment);
     }
 
@@ -146,7 +192,11 @@ public class TaskAttachmentService {
             }
             iterator.remove();
             attachment.setComment(null);
-            minioStorageService.delete(attachment.getStoredKey());
+            if (attachment.getType() == ArtifactType.FILE
+                    && attachment.getStoredKey() != null
+                    && !attachment.getStoredKey().isBlank()) {
+                minioStorageService.delete(attachment.getStoredKey());
+            }
             taskAttachmentRepository.delete(attachment);
         }
     }
@@ -161,5 +211,29 @@ public class TaskAttachmentService {
         if (fileName == null) return "";
         int idx = fileName.lastIndexOf('.');
         return idx >= 0 ? fileName.substring(idx) : "";
+    }
+
+    private String normalizeUrl(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String candidate = raw.trim();
+        try {
+            URI uri = new URI(candidate);
+            String scheme = uri.getScheme();
+            if (scheme == null) {
+                return null;
+            }
+            String normalizedScheme = scheme.toLowerCase();
+            if (!"http".equals(normalizedScheme) && !"https".equals(normalizedScheme)) {
+                return null;
+            }
+            if (uri.getHost() == null || uri.getHost().isBlank()) {
+                return null;
+            }
+            return uri.toString();
+        } catch (URISyntaxException ex) {
+            return null;
+        }
     }
 }

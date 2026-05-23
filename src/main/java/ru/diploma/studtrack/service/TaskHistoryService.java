@@ -29,11 +29,19 @@ public class TaskHistoryService {
         return switch (entry.getEventType()) {
             case TASK_FIELD_CHANGED -> {
                 if ("attachments".equals(entry.getFieldName())) {
-                    if ((entry.getNewValue() == null || entry.getNewValue().isBlank())
-                            && entry.getOldValue() != null && !entry.getOldValue().isBlank()) {
-                        yield "удалил(а) файл из задачи: " + safeName(entry.getOldValue());
+                    String oldVal = entry.getOldValue();
+                    String newVal = entry.getNewValue();
+                    if ((newVal == null || newVal.isBlank()) && oldVal != null && !oldVal.isBlank()) {
+                        yield isLinkHistoryValue(oldVal)
+                                ? "удалил(а) ссылку из задачи: " + safeName(stripHistoryPrefix(oldVal))
+                                : "удалил(а) файл из задачи: " + safeName(stripHistoryPrefix(oldVal));
                     }
-                    yield "прикрепил(а) файл к задаче: " + safeName(entry.getNewValue());
+                    if (newVal != null && !newVal.isBlank()) {
+                        yield isLinkHistoryValue(newVal)
+                                ? "добавил(а) ссылку к задаче: " + safeName(stripHistoryPrefix(newVal))
+                                : "прикрепил(а) файл к задаче: " + safeName(stripHistoryPrefix(newVal));
+                    }
+                    yield "изменил(а) вложения задачи";
                 }
                 yield "изменил(а) " + fieldLabel(entry.getFieldName()) + ": "
                         + valueLabel(entry.getFieldName(), entry.getOldValue()) + " -> "
@@ -178,6 +186,23 @@ public class TaskHistoryService {
 
     private String safeName(String value) {
         return value == null || value.isBlank() ? "—" : value;
+    }
+
+    private boolean isLinkHistoryValue(String value) {
+        return value != null && value.startsWith("LINK::");
+    }
+
+    private String stripHistoryPrefix(String value) {
+        if (value == null) {
+            return null;
+        }
+        if (value.startsWith("FILE::")) {
+            return value.substring("FILE::".length());
+        }
+        if (value.startsWith("LINK::")) {
+            return value.substring("LINK::".length());
+        }
+        return value;
     }
 
     private String safeNumber(String value) {
