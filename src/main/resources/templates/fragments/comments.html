@@ -21,11 +21,11 @@
                  th:if="${!comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')].isEmpty()}">
                 <a th:each="att : ${comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')]}"
                    th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
-                   class="d-inline-block border rounded overflow-hidden text-decoration-none bg-light"
-                   style="width: 140px;">
+                   class="artifact-card d-inline-block border rounded overflow-hidden text-decoration-none bg-light">
                     <img th:src="@{/tasks/attachments/{id}/url(id=${att.id})}"
                          th:alt="${att.originalName}"
-                         style="width: 140px; height: 96px; object-fit: cover; display: block;">
+                         style="object-fit: cover; display: block;"
+                         class="artifact-preview">
                     <span class="d-block px-2 py-1 small text-truncate text-dark"
                           th:text="${att.displayNameShort}"
                           th:title="${att.displayName}">image.png</span>
@@ -39,10 +39,9 @@
                  th:if="${!comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')].isEmpty()}">
                 <a th:each="att : ${comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')]}"
                    th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
-                   class="d-inline-block border rounded overflow-hidden text-decoration-none bg-light"
-                   style="width: 140px;">
+                   class="artifact-card d-inline-block border rounded overflow-hidden text-decoration-none bg-light">
                     <div class="d-flex align-items-center justify-content-center text-secondary"
-                         style="width: 140px; height: 96px;">
+                         class="artifact-preview">
                         <i class="bi bi-file-earmark fs-4"></i>
                     </div>
                     <span class="d-block px-2 py-1 small text-truncate text-dark"
@@ -73,12 +72,12 @@
                 <div class="d-flex flex-wrap gap-2 mb-2"
                      th:if="${!comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')].isEmpty()}">
                     <div th:each="att : ${comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')]}"
-                         class="js-edit-existing-attachment-item border rounded overflow-hidden bg-white position-relative"
-                         style="width: 140px;">
+                         class="js-edit-existing-attachment-item artifact-card border rounded overflow-hidden bg-white position-relative">
                         <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}" class="text-decoration-none">
                             <img th:src="@{/tasks/attachments/{id}/url(id=${att.id})}"
                                  th:alt="${att.originalName}"
-                                 style="width: 140px; height: 96px; object-fit: cover; display: block;">
+                                 style="object-fit: cover; display: block;"
+                                 class="artifact-preview">
                             <span class="d-block px-2 py-1 small text-truncate text-dark"
                                   th:text="${att.displayNameShort}"
                                   th:title="${att.displayName}">image.png</span>
@@ -97,11 +96,10 @@
                 <div class="d-flex flex-wrap gap-2 mb-2"
                      th:if="${!comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')].isEmpty()}">
                     <div th:each="att : ${comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')]}"
-                         class="js-edit-existing-attachment-item border rounded overflow-hidden bg-white position-relative"
-                         style="width: 140px;">
+                         class="js-edit-existing-attachment-item artifact-card border rounded overflow-hidden bg-white position-relative">
                         <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}" class="text-decoration-none">
                             <div class="d-flex align-items-center justify-content-center text-secondary"
-                                 style="width: 140px; height: 96px;">
+                                 class="artifact-preview">
                                 <i class="bi bi-file-earmark fs-4"></i>
                             </div>
                             <span class="d-block px-2 py-1 small text-truncate text-dark"

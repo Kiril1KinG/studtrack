@@ -519,15 +519,13 @@
                     };
                     if (isImage && item?.id) {
                         const card = document.createElement("div");
-                        card.className = "border rounded overflow-hidden bg-white position-relative";
-                        card.style.width = "140px";
+                        card.className = "artifact-card border rounded overflow-hidden bg-white position-relative";
                         const img = document.createElement("img");
                         img.src = `/tasks/attachments/${item.id}/url`;
                         img.alt = name;
-                        img.style.width = "140px";
-                        img.style.height = "96px";
                         img.style.objectFit = "cover";
                         img.style.display = "block";
+                        img.className = "artifact-preview";
                         const caption = document.createElement("span");
                         caption.className = "d-block px-2 py-1 small text-truncate text-dark";
                         caption.textContent = name;
@@ -555,12 +553,9 @@
                         return;
                     }
                     const badge = document.createElement("span");
-                    badge.className = "border rounded overflow-hidden bg-white position-relative";
-                    badge.style.width = "140px";
+                    badge.className = "artifact-card border rounded overflow-hidden bg-white position-relative";
                     const iconWrap = document.createElement("div");
-                    iconWrap.className = "d-flex align-items-center justify-content-center text-secondary";
-                    iconWrap.style.width = "140px";
-                    iconWrap.style.height = "96px";
+                    iconWrap.className = "artifact-preview d-flex align-items-center justify-content-center text-secondary";
                     iconWrap.innerHTML = "<i class='bi bi-file-earmark fs-4'></i>";
                     const text = document.createElement("span");
                     text.className = "d-block px-2 py-1 small text-truncate text-dark";
@@ -780,15 +775,13 @@
                                         };
                                         if (isImage && item?.id && pendingWrap) {
                                             const card = document.createElement("div");
-                                            card.className = "border rounded overflow-hidden bg-white position-relative";
-                                            card.style.width = "140px";
+                                            card.className = "artifact-card border rounded overflow-hidden bg-white position-relative";
                                             const img = document.createElement("img");
                                             img.src = `/tasks/attachments/${item.id}/url`;
                                             img.alt = name;
-                                            img.style.width = "140px";
-                                            img.style.height = "96px";
                                             img.style.objectFit = "cover";
                                             img.style.display = "block";
+                                            img.className = "artifact-preview";
                                             const caption = document.createElement("span");
                                             caption.className = "d-block px-2 py-1 small text-truncate text-dark";
                                             caption.textContent = name;
@@ -815,12 +808,9 @@
                                             pendingWrap.appendChild(card);
                                         } else {
                                             const badge = document.createElement("span");
-                                            badge.className = "border rounded overflow-hidden bg-white position-relative";
-                                            badge.style.width = "140px";
+                                            badge.className = "artifact-card border rounded overflow-hidden bg-white position-relative";
                                             const iconWrap = document.createElement("div");
-                                            iconWrap.className = "d-flex align-items-center justify-content-center text-secondary";
-                                            iconWrap.style.width = "140px";
-                                            iconWrap.style.height = "96px";
+                                            iconWrap.className = "artifact-preview d-flex align-items-center justify-content-center text-secondary";
                                             iconWrap.innerHTML = "<i class='bi bi-file-earmark fs-4'></i>";
                                             const text = document.createElement("span");
                                             text.className = "d-block px-2 py-1 small text-truncate text-dark";
@@ -964,15 +954,13 @@
                         };
                         if (isImage && item?.id) {
                             const card = document.createElement("div");
-                            card.className = "border rounded overflow-hidden bg-white position-relative";
-                            card.style.width = "140px";
+                            card.className = "artifact-card border rounded overflow-hidden bg-white position-relative";
                             const img = document.createElement("img");
                             img.src = `/tasks/attachments/${item.id}/url`;
                             img.alt = name;
-                            img.style.width = "140px";
-                            img.style.height = "96px";
                             img.style.objectFit = "cover";
                             img.style.display = "block";
+                            img.className = "artifact-preview";
                             const caption = document.createElement("span");
                             caption.className = "d-block px-2 py-1 small text-truncate text-dark";
                             caption.textContent = name;
@@ -1000,12 +988,9 @@
                             return;
                         }
                         const chip = document.createElement("span");
-                        chip.className = "border rounded overflow-hidden bg-white position-relative";
-                        chip.style.width = "140px";
+                        chip.className = "artifact-card border rounded overflow-hidden bg-white position-relative";
                         const iconWrap = document.createElement("div");
-                        iconWrap.className = "d-flex align-items-center justify-content-center text-secondary";
-                        iconWrap.style.width = "140px";
-                        iconWrap.style.height = "96px";
+                        iconWrap.className = "artifact-preview d-flex align-items-center justify-content-center text-secondary";
                         iconWrap.innerHTML = "<i class='bi bi-file-earmark fs-4'></i>";
                         const text = document.createElement("span");
                         text.className = "d-block px-2 py-1 small text-truncate text-dark";
