@@ -40,8 +40,7 @@
                 <a th:each="att : ${comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')]}"
                    th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
                    class="artifact-card d-inline-block border rounded overflow-hidden text-decoration-none bg-light">
-                    <div class="d-flex align-items-center justify-content-center text-secondary"
-                         class="artifact-preview">
+                    <div class="d-flex align-items-center justify-content-center text-secondary artifact-preview">
                         <i class="bi bi-file-earmark fs-4"></i>
                     </div>
                     <span class="d-block px-2 py-1 small text-truncate text-dark"
@@ -98,8 +97,7 @@
                     <div th:each="att : ${comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')]}"
                          class="js-edit-existing-attachment-item artifact-card border rounded overflow-hidden bg-white position-relative">
                         <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}" class="text-decoration-none">
-                            <div class="d-flex align-items-center justify-content-center text-secondary"
-                                 class="artifact-preview">
+                            <div class="d-flex align-items-center justify-content-center text-secondary artifact-preview">
                                 <i class="bi bi-file-earmark fs-4"></i>
                             </div>
                             <span class="d-block px-2 py-1 small text-truncate text-dark"

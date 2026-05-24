@@ -10,9 +10,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.diploma.studtrack.dto.request.TaskCreateRequest;
 import ru.diploma.studtrack.model.Project;
 import ru.diploma.studtrack.model.ProjectMember;
+import ru.diploma.studtrack.model.ArtifactType;
 import ru.diploma.studtrack.model.Task;
+import ru.diploma.studtrack.model.TaskAttachment;
 import ru.diploma.studtrack.model.User;
 import ru.diploma.studtrack.service.ProjectService;
+import ru.diploma.studtrack.service.TaskAttachmentService;
+import ru.diploma.studtrack.service.TaskHistoryService;
 import ru.diploma.studtrack.service.TaskService;
 import ru.diploma.studtrack.service.UserService;
 
@@ -30,6 +34,8 @@ public class WebProjectController {
     private final ProjectService projectService;
     private final TaskService taskService;
     private final UserService userService;
+    private final TaskAttachmentService taskAttachmentService;
+    private final TaskHistoryService taskHistoryService;
 
     @GetMapping
     public String listProjects(Model model) {
@@ -56,6 +62,7 @@ public class WebProjectController {
     @GetMapping("/{id}")
     public String viewProject(@PathVariable UUID id,
                               @RequestParam(required = false, defaultValue = "board") String tab,
+                              @RequestParam(required = false, defaultValue = "newest") String sort,
                               Model model) {
         Project project = projectService.findById(id);
         projectService.checkMembership(id);
@@ -66,6 +73,8 @@ public class WebProjectController {
         Map<UUID, String> reviewStateByTaskId = taskService.getReviewStateByTaskId(tasks);
         Map<UUID, TaskService.ReviewStats> reviewStatsByTaskId = taskService.getReviewStatsByTaskId(tasks);
         List<ProjectMember> members = projectService.getMembers(id);
+        String repositorySort = sort;
+        List<TaskAttachment> repositoryArtifacts = taskAttachmentService.getProjectArtifacts(id, repositorySort);
         User currentUser = userService.getCurrentUser();
         boolean isOwner = projectService.isOwner(id, currentUser.getId());
 
@@ -76,6 +85,8 @@ public class WebProjectController {
         model.addAttribute("statuses", Task.TaskStatus.values());
         model.addAttribute("priorities", Task.Priority.values());
         model.addAttribute("members", members);
+        model.addAttribute("repositoryArtifacts", repositoryArtifacts);
+        model.addAttribute("repositorySort", repositorySort);
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("isOwner", isOwner);
         model.addAttribute("activeTab", tab);
@@ -100,6 +111,41 @@ public class WebProjectController {
         model.addAttribute("reviewStatsByTaskId", reviewStatsByTaskId);
         model.addAttribute("statuses", Task.TaskStatus.values());
         return "projects/fragments :: kanbanBoard";
+    }
+
+    @GetMapping("/{id}/repository")
+    public String getRepository(@PathVariable UUID id,
+                                @RequestParam(required = false, defaultValue = "newest") String sort,
+                                Model model) {
+        Project project = projectService.findById(id);
+        projectService.checkMembership(id);
+
+        List<TaskAttachment> artifacts = taskAttachmentService.getProjectArtifacts(id, sort);
+        User currentUser = userService.getCurrentUser();
+        boolean isOwner = projectService.isOwner(id, currentUser.getId());
+        model.addAttribute("project", project);
+        model.addAttribute("repositoryArtifacts", artifacts);
+        model.addAttribute("repositorySort", sort);
+        model.addAttribute("currentUser", currentUser);
+        model.addAttribute("isOwner", isOwner);
+        return "projects/fragments :: repositoryTab";
+    }
+
+    @PostMapping("/{projectId}/repository/{artifactId}/delete")
+    public String deleteRepositoryArtifact(@PathVariable UUID projectId,
+                                           @PathVariable UUID artifactId,
+                                           @RequestParam(required = false, defaultValue = "newest") String sort) {
+        projectService.checkMembership(projectId);
+        TaskAttachment artifact = taskAttachmentService.findById(artifactId);
+        taskHistoryService.recordFieldChange(
+                artifact.getTask(),
+                userService.getCurrentUser(),
+                "attachments",
+                historyValueFor(artifact),
+                null
+        );
+        taskAttachmentService.deleteAttachment(artifactId);
+        return "redirect:/projects/" + projectId + "?tab=repository&sort=" + sort;
     }
 
     @PostMapping("/{projectId}/tasks")
@@ -197,5 +243,15 @@ public class WebProjectController {
             return "redirect:/projects/" + id + "?tab=members";
         }
         return "redirect:/projects";
+    }
+
+    private String historyValueFor(TaskAttachment attachment) {
+        if (attachment.getType() == ArtifactType.LINK) {
+            if (attachment.getLinkTitle() != null && !attachment.getLinkTitle().isBlank()) {
+                return "LINK::" + attachment.getLinkTitle();
+            }
+            return "LINK::" + attachment.getLinkUrl();
+        }
+        return "FILE::" + attachment.getOriginalName();
     }
 }

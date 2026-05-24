@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Sort;
 import ru.diploma.studtrack.exception.AccessDeniedException;
 import ru.diploma.studtrack.exception.InvalidStateException;
 import ru.diploma.studtrack.exception.NotFoundException;
@@ -22,6 +23,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -111,6 +113,18 @@ public class TaskAttachmentService {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
         return taskAttachmentRepository.findByTaskIdAndCommentIsNullOrderByUploadedAtDesc(taskId);
+    }
+
+    public List<TaskAttachment> getProjectArtifacts(UUID projectId, String sortKey) {
+        projectService.checkMembership(projectId);
+        Sort sort = switch ((sortKey == null ? "" : sortKey.toLowerCase(Locale.ROOT))) {
+            case "task" -> Sort.by(Sort.Order.asc("task.title"), Sort.Order.desc("uploadedAt"));
+            case "type" -> Sort.by(Sort.Order.asc("type"), Sort.Order.desc("uploadedAt"));
+            case "oldest" -> Sort.by(Sort.Order.asc("uploadedAt"));
+            case "newest" -> Sort.by(Sort.Order.desc("uploadedAt"));
+            default -> Sort.by(Sort.Order.desc("uploadedAt"));
+        };
+        return taskAttachmentRepository.findByTaskProjectIdAndCommentIsNull(projectId, sort);
     }
 
     public TaskAttachment findById(UUID attachmentId) {

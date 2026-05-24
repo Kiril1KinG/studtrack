@@ -21,5 +21,122 @@
         </th:block>
     </div>
 </th:block>
+
+<th:block th:fragment="repositoryTab(project, repositoryArtifacts, repositorySort)">
+    <div class="card" id="project-repository-tab">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span>Артефакты задач проекта</span>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <input id="repository-search-input"
+                       type="text"
+                       class="form-control form-control-sm"
+                       style="min-width: 220px;"
+                       placeholder="Поиск: имя, задача, тип">
+                <form class="d-flex align-items-center gap-2"
+                      th:action="@{/projects/{id}/repository(id=${project.id})}"
+                      method="get"
+                      th:attr="hx-get=@{/projects/{id}/repository(id=${project.id})}"
+                      hx-target="#project-repository-tab"
+                      hx-swap="outerHTML">
+                    <label for="repository-sort" class="small text-muted mb-0">Сортировка:</label>
+                    <select id="repository-sort" name="sort" class="form-select form-select-sm" onchange="this.form.requestSubmit()">
+                        <option value="newest" th:selected="${repositorySort == 'newest'}">Сначала новые</option>
+                        <option value="oldest" th:selected="${repositorySort == 'oldest'}">Сначала старые</option>
+                        <option value="task" th:selected="${repositorySort == 'task'}">По задаче</option>
+                        <option value="type" th:selected="${repositorySort == 'type'}">По типу</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div th:if="${repositoryArtifacts == null || repositoryArtifacts.isEmpty()}" class="p-3 text-muted">
+                Артефактов пока нет.
+            </div>
+            <div class="table-responsive" th:if="${repositoryArtifacts != null && !repositoryArtifacts.isEmpty()}">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead>
+                    <tr>
+                        <th style="width: 120px;">Тип</th>
+                        <th>Название</th>
+                        <th style="width: 280px;">Задача</th>
+                        <th style="width: 180px;">Добавил</th>
+                        <th style="width: 150px;">Дата</th>
+                        <th style="width: 120px;">Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="att : ${repositoryArtifacts}"
+                        data-repository-row="true"
+                        th:attr="data-search=((${att.displayName} ?: '') + ' ' + (${att.task.title} ?: '') + ' ' + (${att.type} ?: ''))">
+                        <td>
+                            <span th:if="${att.type != null && att.type.name() == 'LINK'}" class="badge text-bg-info">Ссылка</span>
+                            <span th:if="${att.type == null || att.type.name() != 'LINK'}" class="badge text-bg-secondary">Файл</span>
+                        </td>
+                        <td>
+                            <a th:if="${att.type != null && att.type.name() == 'LINK'}"
+                               th:href="${att.linkUrl}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="text-decoration-none"
+                               th:title="${att.displayName}"
+                               th:text="${att.displayNameShort}">link</a>
+                            <a th:if="${att.type == null || att.type.name() != 'LINK'}"
+                               th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                               class="text-decoration-none"
+                               th:title="${att.displayName}"
+                               th:text="${att.displayNameShort}">file</a>
+                        </td>
+                        <td>
+                            <a th:href="@{/tasks/{id}(id=${att.task.id})}"
+                               th:text="${att.task.title}"
+                               class="text-decoration-none">task</a>
+                        </td>
+                        <td th:text="${att.uploadedBy.fullName}">user</td>
+                        <td class="text-nowrap"
+                            th:text="${#temporals.format(att.uploadedAt, 'dd.MM HH:mm')}">01.01 12:00</td>
+                        <td>
+                            <form th:if="${att.uploadedBy.id == currentUser.id || isOwner}"
+                                  th:action="@{/projects/{projectId}/repository/{artifactId}/delete(projectId=${project.id}, artifactId=${att.id})}"
+                                  method="post"
+                                  class="d-inline"
+                                  onsubmit="return confirm('Удалить артефакт?')"
+                                  th:attr="hx-post=@{/projects/{projectId}/repository/{artifactId}/delete(projectId=${project.id}, artifactId=${att.id})}"
+                                  hx-target="#project-repository-tab"
+                                  hx-swap="outerHTML">
+                                <input type="hidden" name="sort" th:value="${repositorySort}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        (() => {
+            const root = document.getElementById("project-repository-tab");
+            if (!root || root.dataset.filterBound === "true") {
+                return;
+            }
+            root.dataset.filterBound = "true";
+            const searchInput = root.querySelector("#repository-search-input");
+            const rows = Array.from(root.querySelectorAll('tr[data-repository-row="true"]'));
+            if (!searchInput || rows.length === 0) {
+                return;
+            }
+            const applyFilter = () => {
+                const needle = (searchInput.value || "").trim().toLowerCase();
+                rows.forEach((row) => {
+                    const hay = (row.dataset.search || "").toLowerCase();
+                    row.classList.toggle("d-none", needle.length > 0 && !hay.includes(needle));
+                });
+            };
+            searchInput.addEventListener("input", applyFilter);
+        })();
+    </script>
+</th:block>
 </body>
 </html>
