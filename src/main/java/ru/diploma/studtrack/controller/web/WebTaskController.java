@@ -12,6 +12,7 @@ import ru.diploma.studtrack.dto.request.TaskCreateRequest;
 import ru.diploma.studtrack.model.Project;
 import ru.diploma.studtrack.model.Task;
 import ru.diploma.studtrack.model.TaskAssignee;
+import ru.diploma.studtrack.model.TaskAttachment;
 import ru.diploma.studtrack.model.TaskReviewer;
 import ru.diploma.studtrack.model.TaskReviewRound;
 import ru.diploma.studtrack.model.Comment;
@@ -41,6 +42,7 @@ public class WebTaskController {
     private final TaskReviewRoundService reviewRoundService;
     private final ChangeRequestService changeRequestService;
     private final TaskHistoryService taskHistoryService;
+    private final TaskAttachmentService taskAttachmentService;
 
     @GetMapping("/my")
     public String myTasks(@RequestParam(required = false) Task.Priority priority,
@@ -121,6 +123,7 @@ public class WebTaskController {
         List<Comment> comments = commentService.getByTask(id);
         List<TaskReviewRound> reviewRounds = reviewRoundService.getRoundsForView(id);
         List<TaskHistory> historyEntries = taskHistoryService.getByTask(id);
+        List<TaskAttachment> attachments = taskAttachmentService.getTaskArtifacts(id);
         Map<UUID, String> historyMessageById = new LinkedHashMap<>();
         historyEntries.forEach(entry -> historyMessageById.put(entry.getId(), taskHistoryService.toHumanMessage(entry)));
         List<User> projectMembers = projectService.getMembers(projectId)
@@ -141,11 +144,13 @@ public class WebTaskController {
         model.addAttribute("reviewRounds", reviewRounds);
         model.addAttribute("historyEntries", historyEntries);
         model.addAttribute("historyMessageById", historyMessageById);
+        model.addAttribute("attachments", attachments);
         model.addAttribute("projectMembers", projectMembers);
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("isOwner", isOwner);
         model.addAttribute("isCurrentUserReviewer", isCurrentUserReviewer);
         model.addAttribute("isCurrentUserAssignee", isCurrentUserAssignee);
+        model.addAttribute("currentUserId", currentUser.getId());
         model.addAttribute("canStartNewRound", canStartNewRound);
         model.addAttribute("lastRoundCompleted", lastRoundCompleted);
         model.addAttribute("pageTitle", "Задача: " + task.getTitle());

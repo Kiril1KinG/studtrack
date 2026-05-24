@@ -38,6 +38,13 @@
                 <span class="badge bg-secondary ms-1" th:text="${members.size()}">0</span>
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link"
+               th:classappend="${activeTab == 'repository'} ? 'active' : ''"
+               th:href="@{/projects/{id}(id=${project.id}, tab='repository')}">
+                <i class="bi bi-archive"></i> Репозиторий
+            </a>
+        </li>
         <li class="nav-item" th:if="${isOwner}">
             <a class="nav-link"
                th:classappend="${activeTab == 'settings'} ? 'active' : ''"
@@ -110,6 +117,10 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div th:if="${activeTab == 'repository'}">
+        <div th:replace="~{projects/fragments :: repositoryTab(project=${project}, repositoryArtifacts=${repositoryArtifacts}, repositorySort=${repositorySort})}"></div>
     </div>
 
     <div th:if="${activeTab == 'settings' && isOwner}">

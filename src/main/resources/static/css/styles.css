@@ -32,3 +32,12 @@
     align-items: center;
     justify-content: center;
 }
+
+.artifact-card {
+    width: 140px;
+}
+
+.artifact-preview {
+    width: 140px;
+    height: 96px;
+}

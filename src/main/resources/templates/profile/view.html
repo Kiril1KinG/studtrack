@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html th:replace="~{layout :: layout(content=~{::main})}"
+      xmlns:th="http://www.thymeleaf.org">
+<body>
+<main>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2 mb-0">Профиль</h1>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">Аватар</div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <img th:if="${avatarUrl != null && !avatarUrl.isBlank()}"
+                             th:src="${avatarUrl}"
+                             alt="Аватар"
+                             class="rounded-circle border"
+                             style="width: 96px; height: 96px; object-fit: cover;">
+                        <div th:if="${avatarUrl == null || avatarUrl.isBlank()}"
+                             class="rounded-circle border d-flex align-items-center justify-content-center bg-light text-muted"
+                             style="width: 96px; height: 96px;">
+                            <i class="bi bi-person fs-1"></i>
+                        </div>
+                        <div class="text-muted small">
+                            JPG, PNG, WEBP. Максимум 10MB.
+                        </div>
+                    </div>
+                    <form th:action="@{/profile/avatar}" method="post" enctype="multipart/form-data" class="d-flex gap-2">
+                        <input type="file" name="avatar" class="form-control" accept="image/*" required>
+                        <button type="submit" class="btn btn-outline-primary">Загрузить</button>
+                    </form>
+                    <form th:if="${avatarUrl != null && !avatarUrl.isBlank()}"
+                          th:action="@{/profile/avatar/delete}"
+                          method="post"
+                          class="mt-2">
+                        <button type="submit"
+                                class="btn btn-outline-danger"
+                                onclick="return confirm('Удалить текущую аватарку?')">
+                            Удалить аватар
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">Личные данные</div>
+                <div class="card-body">
+                    <form th:action="@{/profile/update}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" th:value="${user.email}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Имя</label>
+                            <input type="text" name="fullName" class="form-control" th:value="${user.fullName}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">Смена пароля</div>
+                <div class="card-body">
+                    <form th:action="@{/profile/change-password}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Текущий пароль</label>
+                            <input type="password" name="oldPassword" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Новый пароль</label>
+                            <input type="password" name="newPassword" class="form-control" minlength="6" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary">Изменить пароль</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Мои проекты</span>
+                    <span class="badge bg-secondary" th:text="${projects != null ? projects.size() : 0}">0</span>
+                </div>
+                <div class="card-body p-0">
+                    <div th:if="${projects == null || projects.isEmpty()}" class="p-3 text-muted">
+                        Вы пока не состоите ни в одном проекте.
+                    </div>
+                    <ul th:if="${projects != null && !projects.isEmpty()}" class="list-group list-group-flush">
+                        <li th:each="project : ${projects}" class="list-group-item">
+                            <a th:href="@{/projects/{id}(id=${project.id})}"
+                               class="text-decoration-none"
+                               th:text="${project.name}">Проект</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Мои активные задачи</span>
+                    <span class="badge bg-secondary" th:text="${assignedTasks != null ? assignedTasks.size() : 0}">0</span>
+                </div>
+                <div class="card-body p-0">
+                    <div th:if="${assignedTasks == null || assignedTasks.isEmpty()}" class="p-3 text-muted">
+                        Активных задач нет.
+                    </div>
+                    <ul th:if="${assignedTasks != null && !assignedTasks.isEmpty()}" class="list-group list-group-flush">
+                        <li th:each="task : ${assignedTasks}" class="list-group-item d-flex justify-content-between align-items-center">
+                            <a th:href="@{/tasks/{id}(id=${task.id})}"
+                               class="text-decoration-none"
+                               th:text="${task.title}">Задача</a>
+                            <span class="badge bg-info text-dark" th:text="${task.status}">STATUS</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

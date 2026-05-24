@@ -89,6 +89,10 @@ public class Task {
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ChangeRequest> changeRequests = new HashSet<>();
 
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("uploadedAt DESC")
+    private List<TaskAttachment> attachments = new ArrayList<>();
+
     public enum TaskStatus {
         BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE
     }

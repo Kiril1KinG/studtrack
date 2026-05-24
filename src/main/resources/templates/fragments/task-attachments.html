@@ -1,0 +1,67 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <div th:fragment="attachmentList" id="attachments-list">
+        <div th:if="${attachments == null || attachments.isEmpty()}" class="text-muted small d-flex align-items-center">
+            <i class="bi bi-paperclip me-2"></i>
+            <span>Файлы и ссылки не добавлены</span>
+        </div>
+        <div th:if="${attachments != null && !attachments.isEmpty()}" class="d-flex flex-wrap gap-2 mb-2">
+            <div th:each="att : ${attachments}"
+                 class="artifact-card border rounded overflow-hidden bg-white position-relative">
+                <th:block th:if="${att.type != null and att.type.name() == 'LINK'}">
+                    <a th:href="${att.linkUrl}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                        <div class="d-flex align-items-center justify-content-center text-primary artifact-preview"
+                             style="background: #f8f9fa;">
+                            <i class="bi bi-link-45deg fs-4"></i>
+                        </div>
+                        <div class="px-2 py-1 small text-dark">
+                            <div class="text-truncate"
+                                 th:text="${att.displayNameShort}"
+                                 th:title="${att.displayName}">link</div>
+                            <div class="text-muted text-truncate" th:text="${att.linkUrl}">url</div>
+                            <div class="text-muted"
+                                 th:if="${att.uploadedAt != null}"
+                                 th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</div>
+                        </div>
+                    </a>
+                </th:block>
+                <a th:if="${att.type == null || att.type.name() != 'LINK'}"
+                   th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                   class="text-decoration-none">
+                    <th:block th:if="${att.contentType != null and #strings.startsWith(att.contentType, 'image/')}">
+                        <img th:src="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                             th:alt="${att.originalName}"
+                             style="object-fit: cover; display: block;"
+                             class="artifact-preview">
+                    </th:block>
+                    <th:block th:unless="${att.contentType != null and #strings.startsWith(att.contentType, 'image/')}">
+                        <div class="d-flex align-items-center justify-content-center text-secondary artifact-preview"
+                             style="background: #f8f9fa;">
+                            <i class="bi bi-paperclip fs-4"></i>
+                        </div>
+                    </th:block>
+                    <div class="px-2 py-1 small text-dark">
+                        <div class="text-truncate"
+                             th:text="${att.displayNameShort}"
+                             th:title="${att.displayName}">file</div>
+                        <div class="text-muted"
+                             th:text="${#numbers.formatDecimal((att.size != null ? att.size : 0) / 1024.0, 1, 1) + ' KB'}">0 KB</div>
+                        <div class="text-muted"
+                             th:if="${att.uploadedAt != null}"
+                             th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</div>
+                    </div>
+                </a>
+                <form th:if="${att.uploadedBy.id == currentUserId || isOwner}"
+                      th:action="@{/tasks/attachments/{id}(id=${att.id})}"
+                      method="post"
+                      th:attr="hx-delete=@{/tasks/attachments/{id}(id=${att.id},taskId=${taskId})}"
+                      hx-target="#attachments-list"
+                      hx-swap="outerHTML"
+                      class="position-absolute top-0 end-0 m-1">
+                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1" title="Удалить">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

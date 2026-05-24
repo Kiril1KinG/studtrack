@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import ru.diploma.studtrack.dto.request.CommentCreateRequest;
 import ru.diploma.studtrack.dto.request.CommentUpdateRequest;
 import ru.diploma.studtrack.model.Comment;
 import ru.diploma.studtrack.service.CommentService;
@@ -28,12 +27,13 @@ public class WebCommentController {
 
     @PostMapping("/{taskId}/comments")
     public String addComment(@PathVariable UUID taskId,
-                             @Valid @ModelAttribute CommentCreateRequest request,
+                             @RequestParam String content,
+                             @RequestParam(name = "attachmentIds", required = false) List<UUID> attachmentIds,
                              Model model) {
         var task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
 
-        Comment comment = commentService.addCommentToTask(taskId, request.getContent());
+        Comment comment = commentService.addCommentToTask(taskId, content, attachmentIds != null ? attachmentIds : List.of());
         model.addAttribute("comment", comment);
         return "fragments/comments :: singleComment";
     }
@@ -50,6 +50,7 @@ public class WebCommentController {
         Comment comment = commentService.findById(commentId);
         projectService.checkMembership(comment.getTask().getProject().getId());
         model.addAttribute("comment", comment);
+        model.addAttribute("taskId", comment.getTask().getId());
         return "fragments/comments :: editComment";
     }
 
@@ -65,7 +66,13 @@ public class WebCommentController {
     public String updateComment(@PathVariable UUID commentId,
                                 @Valid @ModelAttribute CommentUpdateRequest request,
                                 Model model) {
-        Comment comment = commentService.updateContent(commentId, request.getContent());
+        Comment existing = commentService.findById(commentId);
+        Comment comment = commentService.updateContent(
+                commentId,
+                request.getContent(),
+                request.getAttachmentIds(),
+                request.getRemovedAttachmentIds()
+        );
         model.addAttribute("comment", comment);
         return "fragments/comments :: singleComment";
     }
@@ -81,8 +88,9 @@ public class WebCommentController {
     @PostMapping("/change-requests/{crId}/comments")
     public String addCrComment(@PathVariable UUID crId,
                                @RequestParam String content,
+                               @RequestParam(name = "attachmentIds", required = false) List<UUID> attachmentIds,
                                Model model) {
-        commentService.addCommentToChangeRequest(crId, content);
+        commentService.addCommentToChangeRequest(crId, content, attachmentIds != null ? attachmentIds : List.of());
         List<Comment> comments = commentService.getByChangeRequest(crId);
         model.addAttribute("comments", comments);
         model.addAttribute("crId", crId);

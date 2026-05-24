@@ -3,6 +3,8 @@ package ru.diploma.studtrack.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import ru.diploma.studtrack.exception.AccessDeniedException;
 import ru.diploma.studtrack.exception.NotFoundException;
 import ru.diploma.studtrack.model.ChangeRequest;
@@ -28,13 +30,16 @@ public class CommentService {
     private final ProjectService projectService;
     private final TaskReviewRoundService roundService;
     private final NotificationService notificationService;
+    private final TaskAttachmentService taskAttachmentService;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public List<Comment> getByTask(UUID taskId) {
-        return commentRepository.findByTaskIdOrderByCreatedAtAsc(taskId);
+        return commentRepository.findByTaskIdOrderByCreatedAtDesc(taskId);
     }
 
     public List<Comment> getByChangeRequest(UUID changeRequestId) {
-        return commentRepository.findByChangeRequestIdOrderByCreatedAtAsc(changeRequestId);
+        return commentRepository.findByChangeRequestIdOrderByCreatedAtDesc(changeRequestId);
     }
 
     public Comment findById(UUID id) {
@@ -44,6 +49,11 @@ public class CommentService {
 
     @Transactional
     public Comment addCommentToTask(UUID taskId, String content) {
+        return addCommentToTask(taskId, content, List.of());
+    }
+
+    @Transactional
+    public Comment addCommentToTask(UUID taskId, String content, List<UUID> attachmentIds) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
 
@@ -57,8 +67,12 @@ public class CommentService {
                 .build();
 
         Comment saved = commentRepository.save(comment);
+        taskAttachmentService.attachToComment(taskId, saved, attachmentIds);
         notificationService.notifyCommentAdded(saved, currentUser);
-        return saved;
+        entityManager.flush();
+        entityManager.clear();
+        return commentRepository.findDetailedById(saved.getId())
+                .orElse(saved);
     }
 
     @Transactional
@@ -83,6 +97,11 @@ public class CommentService {
 
     @Transactional
     public Comment addCommentToChangeRequest(UUID changeRequestId, String content) {
+        return addCommentToChangeRequest(changeRequestId, content, List.of());
+    }
+
+    @Transactional
+    public Comment addCommentToChangeRequest(UUID changeRequestId, String content, List<UUID> attachmentIds) {
         ChangeRequest cr = changeRequestRepository.findById(changeRequestId)
                 .orElseThrow(() -> new NotFoundException("Замечание", changeRequestId));
         Task task = cr.getRound().getTask();
@@ -99,16 +118,37 @@ public class CommentService {
                 .build();
 
         Comment saved = commentRepository.save(comment);
+        taskAttachmentService.attachToComment(task.getId(), saved, attachmentIds);
         notificationService.notifyCommentAdded(saved, currentUser);
-        return saved;
+        entityManager.flush();
+        entityManager.clear();
+        return commentRepository.findDetailedById(saved.getId())
+                .orElse(saved);
     }
 
     @Transactional
     public Comment updateContent(UUID id, String content) {
+        return updateContent(id, content, List.of(), List.of());
+    }
+
+    @Transactional
+    public Comment updateContent(UUID id, String content, List<UUID> attachmentIds, List<UUID> removedAttachmentIds) {
         Comment comment = findById(id);
         checkAuthorship(comment);
         comment.setContent(content);
-        return commentRepository.save(comment);
+        taskAttachmentService.attachToComment(
+                comment.getTask().getId(),
+                comment,
+                attachmentIds != null ? attachmentIds : List.of()
+        );
+        taskAttachmentService.deleteCommentAttachments(
+                comment,
+                removedAttachmentIds != null ? removedAttachmentIds : List.of()
+        );
+        Comment saved = commentRepository.save(comment);
+        entityManager.flush();
+        entityManager.clear();
+        return commentRepository.findDetailedById(saved.getId()).orElse(saved);
     }
 
     @Transactional

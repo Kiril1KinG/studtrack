@@ -25,17 +25,38 @@ services:
         - action: rebuild
           path: ./src
     container_name: studtrack-app
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/studtrack
       SPRING_DATASOURCE_USERNAME: studtrack
       SPRING_DATASOURCE_PASSWORD: studtrack
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_LIQUIBASE_ENABLED: "false"
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: http://localhost:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: studtrack-attachments
     ports:
       - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  minio:
+    image: quay.io/minio/minio
+    container_name: studtrack-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
 
 volumes:
   postgres-data:
+  minio-data:

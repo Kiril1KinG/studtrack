@@ -6,6 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -40,6 +42,10 @@ public class Comment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "change_request_id")
     private ChangeRequest changeRequest;
+
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL)
+    @OrderBy("uploadedAt ASC")
+    private List<TaskAttachment> attachments = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

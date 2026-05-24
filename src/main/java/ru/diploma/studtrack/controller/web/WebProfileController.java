@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.diploma.studtrack.model.Task;
 import ru.diploma.studtrack.model.User;
@@ -35,6 +36,7 @@ public class WebProfileController {
                 .toList();
 
         model.addAttribute("user", currentUser);
+        model.addAttribute("avatarUrl", userService.getAvatarUrl(currentUser));
         model.addAttribute("projects", projectService.getMyProjects());
         model.addAttribute("assignedTasks", assignedTasks);
         model.addAttribute("pageTitle", "Профиль");
@@ -65,6 +67,31 @@ public class WebProfileController {
             UUID currentUserId = userService.getCurrentUserId();
             userService.changePassword(currentUserId, oldPassword, newPassword);
             redirectAttributes.addFlashAttribute("successMessage", "Пароль изменён");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/profile";
+    }
+
+    @PostMapping("/avatar")
+    public String updateAvatar(@RequestParam("avatar") MultipartFile avatar,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            UUID currentUserId = userService.getCurrentUserId();
+            userService.updateAvatar(currentUserId, avatar);
+            redirectAttributes.addFlashAttribute("successMessage", "Аватар обновлён");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/profile";
+    }
+
+    @PostMapping("/avatar/delete")
+    public String deleteAvatar(RedirectAttributes redirectAttributes) {
+        try {
+            UUID currentUserId = userService.getCurrentUserId();
+            userService.deleteAvatar(currentUserId);
+            redirectAttributes.addFlashAttribute("successMessage", "Аватар удалён");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }

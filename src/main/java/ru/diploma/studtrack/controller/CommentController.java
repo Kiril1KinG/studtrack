@@ -46,7 +46,7 @@ public class CommentController {
             @Valid @RequestBody CommentCreateRequest request) {
         log.info("Запрос на добавление комментария к задаче {}: content='{}'", 
                 taskId, request.getContent());
-        Comment comment = commentService.addCommentToTask(taskId, request.getContent());
+        Comment comment = commentService.addCommentToTask(taskId, request.getContent(), request.getAttachmentIds());
         log.info("Комментарий создан с id: {}", comment.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(commentMapper.toResponse(comment));
     }
@@ -68,7 +68,12 @@ public class CommentController {
             @PathVariable UUID id,
             @Valid @RequestBody CommentUpdateRequest request) {
         log.info("Запрос на обновление комментария id: {}", id);
-        Comment comment = commentService.updateContent(id, request.getContent());
+        Comment comment = commentService.updateContent(
+                id,
+                request.getContent(),
+                request.getAttachmentIds(),
+                request.getRemovedAttachmentIds()
+        );
         log.info("Комментарий обновлён");
         return ResponseEntity.ok(commentMapper.toResponse(comment));
     }

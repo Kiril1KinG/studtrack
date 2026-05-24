@@ -16,6 +16,42 @@
         </div>
 
         <p class="mt-1 mb-0" th:text="*{content}"></p>
+        <div class="mt-2" th:if="${comment.attachments != null && !comment.attachments.isEmpty()}">
+            <div class="d-flex flex-wrap gap-2 mb-2"
+                 th:if="${!comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')].isEmpty()}">
+                <a th:each="att : ${comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')]}"
+                   th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                   class="artifact-card d-inline-block border rounded overflow-hidden text-decoration-none bg-light">
+                    <img th:src="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                         th:alt="${att.originalName}"
+                         style="object-fit: cover; display: block;"
+                         class="artifact-preview">
+                    <span class="d-block px-2 py-1 small text-truncate text-dark"
+                          th:text="${att.displayNameShort}"
+                          th:title="${att.displayName}">image.png</span>
+                    <span class="d-block px-2 pb-1 small text-muted"
+                          th:if="${att.uploadedAt != null}"
+                          th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
+                </a>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2"
+                 th:if="${!comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')].isEmpty()}">
+                <a th:each="att : ${comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')]}"
+                   th:href="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                   class="artifact-card d-inline-block border rounded overflow-hidden text-decoration-none bg-light">
+                    <div class="d-flex align-items-center justify-content-center text-secondary artifact-preview">
+                        <i class="bi bi-file-earmark fs-4"></i>
+                    </div>
+                    <span class="d-block px-2 py-1 small text-truncate text-dark"
+                          th:text="${att.displayNameShort}"
+                          th:title="${att.displayName}">file</span>
+                    <span class="d-block px-2 pb-1 small text-muted"
+                          th:if="${att.uploadedAt != null}"
+                          th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -31,6 +67,67 @@
               hx-swap="outerHTML">
             <textarea name="content" class="form-control form-control-sm mb-2" rows="2" required
                       th:text="*{content}"></textarea>
+            <div class="mb-2">
+                <div class="d-flex flex-wrap gap-2 mb-2"
+                     th:if="${!comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')].isEmpty()}">
+                    <div th:each="att : ${comment.attachments.?[contentType != null and #strings.startsWith(contentType, 'image/')]}"
+                         class="js-edit-existing-attachment-item artifact-card border rounded overflow-hidden bg-white position-relative">
+                        <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}" class="text-decoration-none">
+                            <img th:src="@{/tasks/attachments/{id}/url(id=${att.id})}"
+                                 th:alt="${att.originalName}"
+                                 style="object-fit: cover; display: block;"
+                                 class="artifact-preview">
+                            <span class="d-block px-2 py-1 small text-truncate text-dark"
+                                  th:text="${att.displayNameShort}"
+                                  th:title="${att.displayName}">image.png</span>
+                            <span class="d-block px-2 pb-1 small text-muted"
+                                  th:if="${att.uploadedAt != null}"
+                                  th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
+                        </a>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1 js-edit-remove-existing-attachment"
+                                th:attr="data-attachment-id=${att.id}"
+                                title="Удалить вложение">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mb-2"
+                     th:if="${!comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')].isEmpty()}">
+                    <div th:each="att : ${comment.attachments.?[contentType == null or !#strings.startsWith(contentType, 'image/')]}"
+                         class="js-edit-existing-attachment-item artifact-card border rounded overflow-hidden bg-white position-relative">
+                        <a th:href="@{/tasks/attachments/{id}/url(id=${att.id})}" class="text-decoration-none">
+                            <div class="d-flex align-items-center justify-content-center text-secondary artifact-preview">
+                                <i class="bi bi-file-earmark fs-4"></i>
+                            </div>
+                            <span class="d-block px-2 py-1 small text-truncate text-dark"
+                                  th:text="${att.displayNameShort}"
+                                  th:title="${att.displayName}">file</span>
+                            <span class="d-block px-2 pb-1 small text-muted"
+                                  th:if="${att.uploadedAt != null}"
+                                  th:text="${#temporals.format(att.uploadedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 12:00</span>
+                        </a>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger py-0 px-1 position-absolute top-0 end-0 m-1 js-edit-remove-existing-attachment"
+                                th:attr="data-attachment-id=${att.id}"
+                                title="Удалить вложение">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary js-edit-comment-attach-btn">
+                        <i class="bi bi-paperclip me-1"></i> Прикрепить файл
+                    </button>
+                    <input type="file" class="d-none js-edit-comment-file-input" multiple>
+                    <div class="d-flex flex-wrap gap-2 js-edit-comment-pending-attachments"></div>
+                </div>
+                <div class="form-text">
+                    Можно вставить скриншот через <kbd>Ctrl</kbd> + <kbd>V</kbd> или перетащить в поле комментария.
+                </div>
+            </div>
+            <div class="js-edit-comment-attachment-ids"></div>
+            <div class="js-edit-comment-removed-attachment-ids"></div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary"
@@ -64,10 +161,21 @@
               method="post"
               hx-swap="innerHTML"
               hx-on::after-request="this.reset()"
-              class="mt-2 d-flex gap-2">
-            <input type="text" name="content" class="form-control form-control-sm"
-                   placeholder="Написать комментарий..." required>
-            <button type="submit" class="btn btn-sm btn-primary flex-shrink-0">Отправить</button>
+              class="mt-2">
+            <div class="d-flex gap-2">
+                <input type="text" name="content" class="form-control form-control-sm js-cr-comment-input"
+                       th:attr="data-cr-id=${crId}"
+                       placeholder="Написать комментарий..." required>
+                <button type="submit" class="btn btn-sm btn-primary flex-shrink-0">Отправить</button>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary js-cr-attach-btn">
+                    <i class="bi bi-paperclip me-1"></i> Прикрепить файл
+                </button>
+                <input type="file" class="d-none js-cr-file-input" multiple>
+                <input type="hidden" class="js-cr-attachment-ids">
+                <div class="d-flex flex-wrap gap-2 js-cr-pending-attachments"></div>
+            </div>
         </form>
     </div>
 </th:block>

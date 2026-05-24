@@ -40,6 +40,12 @@ public class User {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
+    @Column(name = "avatar_key")
+    private String avatarKey;
+
+    @Column(name = "avatar_content_type")
+    private String avatarContentType;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
