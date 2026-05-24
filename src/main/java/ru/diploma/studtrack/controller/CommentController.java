@@ -68,7 +68,12 @@ public class CommentController {
             @PathVariable UUID id,
             @Valid @RequestBody CommentUpdateRequest request) {
         log.info("Запрос на обновление комментария id: {}", id);
-        Comment comment = commentService.updateContent(id, request.getContent());
+        Comment comment = commentService.updateContent(
+                id,
+                request.getContent(),
+                request.getAttachmentIds(),
+                request.getRemovedAttachmentIds()
+        );
         log.info("Комментарий обновлён");
         return ResponseEntity.ok(commentMapper.toResponse(comment));
     }
