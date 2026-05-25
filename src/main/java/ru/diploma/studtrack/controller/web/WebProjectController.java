@@ -12,10 +12,10 @@ import ru.diploma.studtrack.dto.request.ProjectStatisticsFilter;
 import ru.diploma.studtrack.dto.response.ProjectStatisticsResponse;
 import ru.diploma.studtrack.model.Project;
 import ru.diploma.studtrack.model.ProjectMember;
-import ru.diploma.studtrack.model.ArtifactType;
 import ru.diploma.studtrack.model.Task;
 import ru.diploma.studtrack.model.TaskAttachment;
 import ru.diploma.studtrack.model.User;
+import ru.diploma.studtrack.service.AttachmentHistoryValueService;
 import ru.diploma.studtrack.service.ProjectService;
 import ru.diploma.studtrack.service.TaskAttachmentService;
 import ru.diploma.studtrack.service.TaskHistoryService;
@@ -40,6 +40,7 @@ public class WebProjectController {
     private final TaskAttachmentService taskAttachmentService;
     private final TaskHistoryService taskHistoryService;
     private final ProjectStatisticsService projectStatisticsService;
+    private final AttachmentHistoryValueService attachmentHistoryValueService;
 
     @GetMapping
     public String listProjects(Model model) {
@@ -72,12 +73,8 @@ public class WebProjectController {
                               Model model) {
         Project project = projectService.findById(id);
         projectService.checkMembership(id);
-
         List<Task> tasks = taskService.getTasksByProject(id);
-        Map<Task.TaskStatus, List<Task>> tasksByStatus = tasks.stream()
-                .collect(Collectors.groupingBy(Task::getStatus));
-        Map<UUID, String> reviewStateByTaskId = taskService.getReviewStateByTaskId(tasks);
-        Map<UUID, TaskService.ReviewStats> reviewStatsByTaskId = taskService.getReviewStatsByTaskId(tasks);
+        KanbanModel kanbanModel = buildKanbanModel(tasks);
         List<ProjectMember> members = projectService.getMembers(id);
         String repositorySort = sort;
         List<TaskAttachment> repositoryArtifacts = taskAttachmentService.getProjectArtifacts(id, repositorySort);
@@ -87,9 +84,9 @@ public class WebProjectController {
         boolean isOwner = projectService.isOwner(id, currentUser.getId());
 
         model.addAttribute("project", project);
-        model.addAttribute("tasksByStatus", tasksByStatus);
-        model.addAttribute("reviewStateByTaskId", reviewStateByTaskId);
-        model.addAttribute("reviewStatsByTaskId", reviewStatsByTaskId);
+        model.addAttribute("tasksByStatus", kanbanModel.tasksByStatus());
+        model.addAttribute("reviewStateByTaskId", kanbanModel.reviewStateByTaskId());
+        model.addAttribute("reviewStatsByTaskId", kanbanModel.reviewStatsByTaskId());
         model.addAttribute("statuses", Task.TaskStatus.values());
         model.addAttribute("priorities", Task.Priority.values());
         model.addAttribute("members", members);
@@ -109,17 +106,13 @@ public class WebProjectController {
     public String getKanbanBoard(@PathVariable UUID id, Model model) {
         Project project = projectService.findById(id);
         projectService.checkMembership(id);
-
         List<Task> tasks = taskService.getTasksByProject(id);
-        Map<Task.TaskStatus, List<Task>> tasksByStatus = tasks.stream()
-                .collect(Collectors.groupingBy(Task::getStatus));
-        Map<UUID, String> reviewStateByTaskId = taskService.getReviewStateByTaskId(tasks);
-        Map<UUID, TaskService.ReviewStats> reviewStatsByTaskId = taskService.getReviewStatsByTaskId(tasks);
+        KanbanModel kanbanModel = buildKanbanModel(tasks);
 
         model.addAttribute("project", project);
-        model.addAttribute("tasksByStatus", tasksByStatus);
-        model.addAttribute("reviewStateByTaskId", reviewStateByTaskId);
-        model.addAttribute("reviewStatsByTaskId", reviewStatsByTaskId);
+        model.addAttribute("tasksByStatus", kanbanModel.tasksByStatus());
+        model.addAttribute("reviewStateByTaskId", kanbanModel.reviewStateByTaskId());
+        model.addAttribute("reviewStatsByTaskId", kanbanModel.reviewStatsByTaskId());
         model.addAttribute("statuses", Task.TaskStatus.values());
         return "projects/fragments :: kanbanBoard";
     }
@@ -170,7 +163,7 @@ public class WebProjectController {
                 artifact.getTask(),
                 userService.getCurrentUser(),
                 "attachments",
-                historyValueFor(artifact),
+                attachmentHistoryValueService.historyValueFor(artifact),
                 null
         );
         taskAttachmentService.deleteAttachment(artifactId);
@@ -195,15 +188,12 @@ public class WebProjectController {
 
         Project project = projectService.findById(projectId);
         List<Task> tasks = taskService.getTasksByProject(projectId);
-        Map<Task.TaskStatus, List<Task>> tasksByStatus = tasks.stream()
-                .collect(Collectors.groupingBy(Task::getStatus));
-        Map<UUID, String> reviewStateByTaskId = taskService.getReviewStateByTaskId(tasks);
-        Map<UUID, TaskService.ReviewStats> reviewStatsByTaskId = taskService.getReviewStatsByTaskId(tasks);
+        KanbanModel kanbanModel = buildKanbanModel(tasks);
 
         model.addAttribute("project", project);
-        model.addAttribute("tasksByStatus", tasksByStatus);
-        model.addAttribute("reviewStateByTaskId", reviewStateByTaskId);
-        model.addAttribute("reviewStatsByTaskId", reviewStatsByTaskId);
+        model.addAttribute("tasksByStatus", kanbanModel.tasksByStatus());
+        model.addAttribute("reviewStateByTaskId", kanbanModel.reviewStateByTaskId());
+        model.addAttribute("reviewStatsByTaskId", kanbanModel.reviewStatsByTaskId());
         model.addAttribute("statuses", Task.TaskStatus.values());
 
         return "projects/fragments :: kanbanBoard";
@@ -274,13 +264,18 @@ public class WebProjectController {
         return "redirect:/projects";
     }
 
-    private String historyValueFor(TaskAttachment attachment) {
-        if (attachment.getType() == ArtifactType.LINK) {
-            if (attachment.getLinkTitle() != null && !attachment.getLinkTitle().isBlank()) {
-                return "LINK::" + attachment.getLinkTitle();
-            }
-            return "LINK::" + attachment.getLinkUrl();
-        }
-        return "FILE::" + attachment.getOriginalName();
+    private KanbanModel buildKanbanModel(List<Task> tasks) {
+        Map<Task.TaskStatus, List<Task>> tasksByStatus = tasks.stream()
+                .collect(Collectors.groupingBy(Task::getStatus));
+        Map<UUID, String> reviewStateByTaskId = taskService.getReviewStateByTaskId(tasks);
+        Map<UUID, TaskService.ReviewStats> reviewStatsByTaskId = taskService.getReviewStatsByTaskId(tasks);
+        return new KanbanModel(tasksByStatus, reviewStateByTaskId, reviewStatsByTaskId);
+    }
+
+    private record KanbanModel(
+            Map<Task.TaskStatus, List<Task>> tasksByStatus,
+            Map<UUID, String> reviewStateByTaskId,
+            Map<UUID, TaskService.ReviewStats> reviewStatsByTaskId
+    ) {
     }
 }

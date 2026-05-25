@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.view.RedirectView;
 import org.springframework.web.multipart.MultipartFile;
-import ru.diploma.studtrack.model.ArtifactType;
 import ru.diploma.studtrack.model.TaskAttachment;
 import ru.diploma.studtrack.model.Task;
+import ru.diploma.studtrack.service.AttachmentHistoryValueService;
 import ru.diploma.studtrack.service.ProjectService;
 import ru.diploma.studtrack.service.TaskAttachmentService;
 import ru.diploma.studtrack.service.TaskHistoryService;
@@ -33,6 +33,7 @@ public class WebAttachmentController {
     private final TaskService taskService;
     private final ProjectService projectService;
     private final TaskHistoryService taskHistoryService;
+    private final AttachmentHistoryValueService attachmentHistoryValueService;
 
     @GetMapping("/{taskId}/attachments")
     public String getAttachments(@PathVariable UUID taskId, Model model) {
@@ -60,7 +61,7 @@ public class WebAttachmentController {
                             userService.getCurrentUser(),
                             "attachments",
                             null,
-                            historyValueFor(created)
+                            attachmentHistoryValueService.historyValueFor(created)
                     );
                 }
             }
@@ -79,7 +80,7 @@ public class WebAttachmentController {
                 userService.getCurrentUser(),
                 "attachments",
                 null,
-                historyValueFor(created)
+                attachmentHistoryValueService.historyValueFor(created)
         );
         return getAttachments(taskId, model);
     }
@@ -113,20 +114,10 @@ public class WebAttachmentController {
                 attachment.getTask(),
                 userService.getCurrentUser(),
                 "attachments",
-                historyValueFor(attachment),
+                attachmentHistoryValueService.historyValueFor(attachment),
                 null
         );
         taskAttachmentService.deleteAttachment(attachmentId);
         return getAttachments(taskId, model);
-    }
-
-    private String historyValueFor(TaskAttachment attachment) {
-        if (attachment.getType() == ArtifactType.LINK) {
-            if (attachment.getLinkTitle() != null && !attachment.getLinkTitle().isBlank()) {
-                return "LINK::" + attachment.getLinkTitle();
-            }
-            return "LINK::" + attachment.getLinkUrl();
-        }
-        return "FILE::" + attachment.getOriginalName();
     }
 }
