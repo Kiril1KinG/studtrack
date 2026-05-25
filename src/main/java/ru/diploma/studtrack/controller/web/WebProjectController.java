@@ -71,8 +71,7 @@ public class WebProjectController {
                               @RequestParam(required = false, defaultValue = "all") String period,
                               @RequestParam(required = false) UUID memberId,
                               Model model) {
-        Project project = projectService.findById(id);
-        projectService.checkMembership(id);
+        Project project = getAccessibleProject(id);
         List<Task> tasks = taskService.getTasksByProject(id);
         KanbanModel kanbanModel = buildKanbanModel(tasks);
         List<ProjectMember> members = projectService.getMembers(id);
@@ -104,16 +103,9 @@ public class WebProjectController {
 
     @GetMapping("/{id}/board")
     public String getKanbanBoard(@PathVariable UUID id, Model model) {
-        Project project = projectService.findById(id);
-        projectService.checkMembership(id);
+        Project project = getAccessibleProject(id);
         List<Task> tasks = taskService.getTasksByProject(id);
-        KanbanModel kanbanModel = buildKanbanModel(tasks);
-
-        model.addAttribute("project", project);
-        model.addAttribute("tasksByStatus", kanbanModel.tasksByStatus());
-        model.addAttribute("reviewStateByTaskId", kanbanModel.reviewStateByTaskId());
-        model.addAttribute("reviewStatsByTaskId", kanbanModel.reviewStatsByTaskId());
-        model.addAttribute("statuses", Task.TaskStatus.values());
+        addKanbanAttributes(model, project, tasks);
         return "projects/fragments :: kanbanBoard";
     }
 
@@ -121,8 +113,7 @@ public class WebProjectController {
     public String getRepository(@PathVariable UUID id,
                                 @RequestParam(required = false, defaultValue = "newest") String sort,
                                 Model model) {
-        Project project = projectService.findById(id);
-        projectService.checkMembership(id);
+        Project project = getAccessibleProject(id);
 
         List<TaskAttachment> artifacts = taskAttachmentService.getProjectArtifacts(id, sort);
         User currentUser = userService.getCurrentUser();
@@ -140,8 +131,7 @@ public class WebProjectController {
                                 @RequestParam(required = false, defaultValue = "all") String period,
                                 @RequestParam(required = false) UUID memberId,
                                 Model model) {
-        Project project = projectService.findById(id);
-        projectService.checkMembership(id);
+        Project project = getAccessibleProject(id);
         List<ProjectMember> members = projectService.getMembers(id);
         ProjectStatisticsFilter filter = ProjectStatisticsFilter.of(period, memberId);
         ProjectStatisticsResponse statistics = projectStatisticsService.getProjectStatistics(id, filter);
@@ -186,15 +176,9 @@ public class WebProjectController {
                 request.getDeadline()
         );
 
-        Project project = projectService.findById(projectId);
+        Project project = getAccessibleProject(projectId);
         List<Task> tasks = taskService.getTasksByProject(projectId);
-        KanbanModel kanbanModel = buildKanbanModel(tasks);
-
-        model.addAttribute("project", project);
-        model.addAttribute("tasksByStatus", kanbanModel.tasksByStatus());
-        model.addAttribute("reviewStateByTaskId", kanbanModel.reviewStateByTaskId());
-        model.addAttribute("reviewStatsByTaskId", kanbanModel.reviewStatsByTaskId());
-        model.addAttribute("statuses", Task.TaskStatus.values());
+        addKanbanAttributes(model, project, tasks);
 
         return "projects/fragments :: kanbanBoard";
     }
@@ -204,64 +188,104 @@ public class WebProjectController {
                                 @RequestParam String name,
                                 @RequestParam(required = false) String description,
                                 RedirectAttributes redirectAttributes) {
-        try {
-            projectService.update(id, name, description);
-        } catch (Exception e) {
-            log.warn("Ошибка обновления проекта {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/projects/" + id + "?tab=settings";
+        return executeProjectAction(
+                id,
+                "обновления",
+                redirectAttributes,
+                redirectToTab(id, "settings"),
+                redirectToTab(id, "settings"),
+                () -> projectService.update(id, name, description)
+        );
     }
 
     @PostMapping("/{id}/delete")
     public String deleteProject(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
-        try {
-            projectService.delete(id);
-        } catch (Exception e) {
-            log.warn("Ошибка удаления проекта {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/projects/" + id + "?tab=settings";
-        }
-        return "redirect:/projects";
+        return executeProjectAction(
+                id,
+                "удаления",
+                redirectAttributes,
+                "redirect:/projects",
+                redirectToTab(id, "settings"),
+                () -> projectService.delete(id)
+        );
     }
 
     @PostMapping("/{id}/members/add")
     public String addMember(@PathVariable UUID id,
                             @RequestParam String email,
                             RedirectAttributes redirectAttributes) {
-        try {
-            User user = userService.findByEmail(email);
-            projectService.addMember(id, user.getId());
-        } catch (Exception e) {
-            log.warn("Ошибка добавления участника в проект {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/projects/" + id + "?tab=members";
+        return executeProjectAction(
+                id,
+                "добавления участника",
+                redirectAttributes,
+                redirectToTab(id, "members"),
+                redirectToTab(id, "members"),
+                () -> {
+                    User user = userService.findByEmail(email);
+                    projectService.addMember(id, user.getId());
+                }
+        );
     }
 
     @PostMapping("/{id}/members/{userId}/remove")
     public String removeMember(@PathVariable UUID id,
                                @PathVariable UUID userId,
                                RedirectAttributes redirectAttributes) {
-        try {
-            projectService.removeMember(id, userId);
-        } catch (Exception e) {
-            log.warn("Ошибка удаления участника из проекта {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/projects/" + id + "?tab=members";
+        return executeProjectAction(
+                id,
+                "удаления участника",
+                redirectAttributes,
+                redirectToTab(id, "members"),
+                redirectToTab(id, "members"),
+                () -> projectService.removeMember(id, userId)
+        );
     }
 
     @PostMapping("/{id}/leave")
     public String leaveProject(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
+        return executeProjectAction(
+                id,
+                "выхода из проекта",
+                redirectAttributes,
+                "redirect:/projects",
+                redirectToTab(id, "members"),
+                () -> projectService.leaveProject(id)
+        );
+    }
+
+    private Project getAccessibleProject(UUID projectId) {
+        Project project = projectService.findById(projectId);
+        projectService.checkMembership(projectId);
+        return project;
+    }
+
+    private void addKanbanAttributes(Model model, Project project, List<Task> tasks) {
+        KanbanModel kanbanModel = buildKanbanModel(tasks);
+        model.addAttribute("project", project);
+        model.addAttribute("tasksByStatus", kanbanModel.tasksByStatus());
+        model.addAttribute("reviewStateByTaskId", kanbanModel.reviewStateByTaskId());
+        model.addAttribute("reviewStatsByTaskId", kanbanModel.reviewStatsByTaskId());
+        model.addAttribute("statuses", Task.TaskStatus.values());
+    }
+
+    private String executeProjectAction(UUID projectId,
+                                        String actionLabel,
+                                        RedirectAttributes redirectAttributes,
+                                        String successRedirect,
+                                        String failureRedirect,
+                                        Runnable action) {
         try {
-            projectService.leaveProject(id);
+            action.run();
+            return successRedirect;
         } catch (Exception e) {
-            log.warn("Ошибка при выходе из проекта {}: {}", id, e.getMessage());
+            log.warn("Ошибка {} проекта {}: {}", actionLabel, projectId, e.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/projects/" + id + "?tab=members";
+            return failureRedirect;
         }
-        return "redirect:/projects";
+    }
+
+    private String redirectToTab(UUID projectId, String tab) {
+        return "redirect:/projects/" + projectId + "?tab=" + tab;
     }
 
     private KanbanModel buildKanbanModel(List<Task> tasks) {
