@@ -47,21 +47,12 @@ public class TaskService {
     public List<Task> getMyTasks(UUID projectId) {
         projectService.checkMembership(projectId);
         UUID currentUserId = userService.getCurrentUserId();
-        Map<UUID, Task> merged = new LinkedHashMap<>();
-        taskAssigneeRepository.findByUserId(currentUserId).stream()
-                .map(ta -> ta.getTask())
-                .filter(t -> t.getProject().getId().equals(projectId))
-                .forEach(t -> merged.put(t.getId(), t));
-        return List.copyOf(merged.values());
+        return collectAssignedTasks(currentUserId, task -> task.getProject().getId().equals(projectId));
     }
 
     public List<Task> getAssignedToMe() {
         UUID currentUserId = userService.getCurrentUserId();
-        Map<UUID, Task> merged = new LinkedHashMap<>();
-        taskAssigneeRepository.findByUserId(currentUserId).stream()
-                .map(ta -> ta.getTask())
-                .forEach(t -> merged.put(t.getId(), t));
-        return List.copyOf(merged.values());
+        return collectAssignedTasks(currentUserId, task -> true);
     }
 
     public Map<UUID, String> getReviewStateByTaskId(List<Task> tasks) {
@@ -165,13 +156,7 @@ public class TaskService {
         }
 
         if (assigneeId != null) {
-            if (taskReviewerRepository.existsByTaskIdAndUserId(id, assigneeId)) {
-                throw new InvalidStateException(
-                        "Нельзя назначить исполнителя",
-                        "пользователь уже является ревьюером этой задачи",
-                        "снимите пользователя с ревьюеров или выберите другого исполнителя"
-                );
-            }
+            ensureUserIsNotReviewer(id, assigneeId);
             addAssigneeLink(task, assigneeId);
         }
 
@@ -358,12 +343,25 @@ public class TaskService {
 
     private void ensureUserIsNotReviewer(UUID taskId, UUID userId) {
         if (taskReviewerRepository.existsByTaskIdAndUserId(taskId, userId)) {
-            throw new InvalidStateException(
-                    "Нельзя назначить исполнителя",
-                    "пользователь уже является ревьюером этой задачи",
-                    "снимите пользователя с ревьюеров или выберите другого исполнителя"
-            );
+            throwAssigneeReviewerConflict();
         }
+    }
+
+    private List<Task> collectAssignedTasks(UUID userId, java.util.function.Predicate<Task> filter) {
+        Map<UUID, Task> merged = new LinkedHashMap<>();
+        taskAssigneeRepository.findByUserId(userId).stream()
+                .map(TaskAssignee::getTask)
+                .filter(filter)
+                .forEach(task -> merged.put(task.getId(), task));
+        return List.copyOf(merged.values());
+    }
+
+    private void throwAssigneeReviewerConflict() {
+        throw new InvalidStateException(
+                "Нельзя назначить исполнителя",
+                "пользователь уже является ревьюером этой задачи",
+                "снимите пользователя с ревьюеров или выберите другого исполнителя"
+        );
     }
 
     private boolean isApprovedByMajority(UUID taskId) {
