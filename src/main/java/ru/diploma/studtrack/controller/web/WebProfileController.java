@@ -46,52 +46,64 @@ public class WebProfileController {
     @PostMapping("/update")
     public String updateProfile(@RequestParam String fullName,
                                 RedirectAttributes redirectAttributes) {
-        try {
-            User current = userService.getCurrentUser();
-            User updated = User.builder()
-                    .fullName(fullName)
-                    .build();
-            userService.update(current.getId(), updated);
-            redirectAttributes.addFlashAttribute("successMessage", "Профиль обновлён");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/profile";
+        return executeProfileAction(
+                redirectAttributes,
+                "Профиль обновлён",
+                () -> {
+                    User current = userService.getCurrentUser();
+                    User updated = User.builder()
+                            .fullName(fullName)
+                            .build();
+                    userService.update(current.getId(), updated);
+                }
+        );
     }
 
     @PostMapping("/change-password")
     public String changePassword(@RequestParam String oldPassword,
                                  @RequestParam String newPassword,
                                  RedirectAttributes redirectAttributes) {
-        try {
-            UUID currentUserId = userService.getCurrentUserId();
-            userService.changePassword(currentUserId, oldPassword, newPassword);
-            redirectAttributes.addFlashAttribute("successMessage", "Пароль изменён");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/profile";
+        return executeProfileAction(
+                redirectAttributes,
+                "Пароль изменён",
+                () -> {
+                    UUID currentUserId = userService.getCurrentUserId();
+                    userService.changePassword(currentUserId, oldPassword, newPassword);
+                }
+        );
     }
 
     @PostMapping("/avatar")
     public String updateAvatar(@RequestParam("avatar") MultipartFile avatar,
                                RedirectAttributes redirectAttributes) {
-        try {
-            UUID currentUserId = userService.getCurrentUserId();
-            userService.updateAvatar(currentUserId, avatar);
-            redirectAttributes.addFlashAttribute("successMessage", "Аватар обновлён");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/profile";
+        return executeProfileAction(
+                redirectAttributes,
+                "Аватар обновлён",
+                () -> {
+                    UUID currentUserId = userService.getCurrentUserId();
+                    userService.updateAvatar(currentUserId, avatar);
+                }
+        );
     }
 
     @PostMapping("/avatar/delete")
     public String deleteAvatar(RedirectAttributes redirectAttributes) {
+        return executeProfileAction(
+                redirectAttributes,
+                "Аватар удалён",
+                () -> {
+                    UUID currentUserId = userService.getCurrentUserId();
+                    userService.deleteAvatar(currentUserId);
+                }
+        );
+    }
+
+    private String executeProfileAction(RedirectAttributes redirectAttributes,
+                                        String successMessage,
+                                        Runnable action) {
         try {
-            UUID currentUserId = userService.getCurrentUserId();
-            userService.deleteAvatar(currentUserId);
-            redirectAttributes.addFlashAttribute("successMessage", "Аватар удалён");
+            action.run();
+            redirectAttributes.addFlashAttribute("successMessage", successMessage);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
