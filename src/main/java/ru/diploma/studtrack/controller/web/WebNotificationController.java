@@ -44,44 +44,46 @@ public class WebNotificationController {
 
     @GetMapping("/dropdown")
     public String dropdown(Model model) {
-        try {
-            model.addAttribute("notifications", notificationService.getRecentForCurrentUser());
-            model.addAttribute("unreadCount", notificationService.getUnreadCountForCurrentUser());
-        } catch (Exception e) {
-            log.warn("Ошибка загрузки dropdown уведомлений: {}", e.getMessage());
-            model.addAttribute("notifications", java.util.List.of());
-            model.addAttribute("unreadCount", 0);
-            model.addAttribute("notificationErrorMessage", e.getMessage());
-        }
-        return "fragments/notifications :: dropdownList";
+        return executeDropdownOperation(model, "Ошибка загрузки dropdown уведомлений", () -> {
+            fillDropdownModel(model);
+        });
     }
 
     @PostMapping("/{id}/read")
     public String markRead(@PathVariable UUID id, Model model) {
-        try {
+        return executeDropdownOperation(model, "Ошибка отметки уведомления " + id + " как прочитанного", () -> {
             notificationService.markAsRead(id);
-            model.addAttribute("notifications", notificationService.getRecentForCurrentUser());
-            model.addAttribute("unreadCount", notificationService.getUnreadCountForCurrentUser());
-        } catch (Exception e) {
-            log.warn("Ошибка отметки уведомления {} как прочитанного: {}", id, e.getMessage());
-            model.addAttribute("notifications", java.util.List.of());
-            model.addAttribute("unreadCount", 0);
-            model.addAttribute("notificationErrorMessage", e.getMessage());
-        }
-        return "fragments/notifications :: dropdownList";
+            fillDropdownModel(model);
+        });
     }
 
     @PostMapping("/read-all")
     public String markAllRead(Model model) {
-        try {
+        return executeDropdownOperation(model, "Ошибка отметки всех уведомлений как прочитанных", () -> {
             notificationService.markAllAsReadForCurrentUser();
-            model.addAttribute("notifications", notificationService.getRecentForCurrentUser());
-            model.addAttribute("unreadCount", notificationService.getUnreadCountForCurrentUser());
+            fillDropdownModel(model);
+        });
+    }
+
+    private void fillDropdownModel(Model model) {
+        model.addAttribute("notifications", notificationService.getRecentForCurrentUser());
+        model.addAttribute("unreadCount", notificationService.getUnreadCountForCurrentUser());
+    }
+
+    private void fillDropdownFallbackModel(Model model, String errorMessage) {
+        model.addAttribute("notifications", java.util.List.of());
+        model.addAttribute("unreadCount", 0);
+        model.addAttribute("notificationErrorMessage", errorMessage);
+    }
+
+    private String executeDropdownOperation(Model model,
+                                            String logPrefix,
+                                            Runnable action) {
+        try {
+            action.run();
         } catch (Exception e) {
-            log.warn("Ошибка отметки всех уведомлений как прочитанных: {}", e.getMessage());
-            model.addAttribute("notifications", java.util.List.of());
-            model.addAttribute("unreadCount", 0);
-            model.addAttribute("notificationErrorMessage", e.getMessage());
+            log.warn("{}: {}", logPrefix, e.getMessage());
+            fillDropdownFallbackModel(model, e.getMessage());
         }
         return "fragments/notifications :: dropdownList";
     }
