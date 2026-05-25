@@ -8,6 +8,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.diploma.studtrack.dto.request.TaskCreateRequest;
+import ru.diploma.studtrack.dto.request.ProjectStatisticsFilter;
+import ru.diploma.studtrack.dto.response.ProjectStatisticsResponse;
 import ru.diploma.studtrack.model.Project;
 import ru.diploma.studtrack.model.ProjectMember;
 import ru.diploma.studtrack.model.ArtifactType;
@@ -19,6 +21,7 @@ import ru.diploma.studtrack.service.TaskAttachmentService;
 import ru.diploma.studtrack.service.TaskHistoryService;
 import ru.diploma.studtrack.service.TaskService;
 import ru.diploma.studtrack.service.UserService;
+import ru.diploma.studtrack.service.ProjectStatisticsService;
 
 import java.util.List;
 import java.util.Map;
@@ -36,6 +39,7 @@ public class WebProjectController {
     private final UserService userService;
     private final TaskAttachmentService taskAttachmentService;
     private final TaskHistoryService taskHistoryService;
+    private final ProjectStatisticsService projectStatisticsService;
 
     @GetMapping
     public String listProjects(Model model) {
@@ -63,6 +67,8 @@ public class WebProjectController {
     public String viewProject(@PathVariable UUID id,
                               @RequestParam(required = false, defaultValue = "board") String tab,
                               @RequestParam(required = false, defaultValue = "newest") String sort,
+                              @RequestParam(required = false, defaultValue = "all") String period,
+                              @RequestParam(required = false) UUID memberId,
                               Model model) {
         Project project = projectService.findById(id);
         projectService.checkMembership(id);
@@ -75,6 +81,8 @@ public class WebProjectController {
         List<ProjectMember> members = projectService.getMembers(id);
         String repositorySort = sort;
         List<TaskAttachment> repositoryArtifacts = taskAttachmentService.getProjectArtifacts(id, repositorySort);
+        ProjectStatisticsFilter statisticsFilter = ProjectStatisticsFilter.of(period, memberId);
+        ProjectStatisticsResponse statistics = projectStatisticsService.getProjectStatistics(id, statisticsFilter);
         User currentUser = userService.getCurrentUser();
         boolean isOwner = projectService.isOwner(id, currentUser.getId());
 
@@ -87,6 +95,9 @@ public class WebProjectController {
         model.addAttribute("members", members);
         model.addAttribute("repositoryArtifacts", repositoryArtifacts);
         model.addAttribute("repositorySort", repositorySort);
+        model.addAttribute("statistics", statistics);
+        model.addAttribute("statisticsPeriod", statisticsFilter.period().code());
+        model.addAttribute("statisticsMemberId", memberId);
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("isOwner", isOwner);
         model.addAttribute("activeTab", tab);
@@ -129,6 +140,24 @@ public class WebProjectController {
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("isOwner", isOwner);
         return "projects/fragments :: repositoryTab";
+    }
+
+    @GetMapping("/{id}/statistics")
+    public String getStatistics(@PathVariable UUID id,
+                                @RequestParam(required = false, defaultValue = "all") String period,
+                                @RequestParam(required = false) UUID memberId,
+                                Model model) {
+        Project project = projectService.findById(id);
+        projectService.checkMembership(id);
+        List<ProjectMember> members = projectService.getMembers(id);
+        ProjectStatisticsFilter filter = ProjectStatisticsFilter.of(period, memberId);
+        ProjectStatisticsResponse statistics = projectStatisticsService.getProjectStatistics(id, filter);
+        model.addAttribute("project", project);
+        model.addAttribute("members", members);
+        model.addAttribute("statistics", statistics);
+        model.addAttribute("statisticsPeriod", filter.period().code());
+        model.addAttribute("statisticsMemberId", memberId);
+        return "projects/fragments :: statisticsTab";
     }
 
     @PostMapping("/{projectId}/repository/{artifactId}/delete")
