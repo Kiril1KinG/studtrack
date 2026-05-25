@@ -22,6 +22,139 @@
     </div>
 </th:block>
 
+<th:block th:fragment="statisticsTab(project, members, statistics, statisticsPeriod, statisticsMemberId)">
+    <div class="card" id="project-statistics-tab">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span>Статистика проекта</span>
+            <form class="d-flex flex-wrap align-items-center gap-2"
+                  th:action="@{/projects/{id}/statistics(id=${project.id})}"
+                  method="get"
+                  th:attr="hx-get=@{/projects/{id}/statistics(id=${project.id})}"
+                  hx-target="#project-statistics-tab"
+                  hx-swap="outerHTML">
+                <label class="small text-muted mb-0" for="statistics-period">Период:</label>
+                <select id="statistics-period" name="period" class="form-select form-select-sm" onchange="this.form.requestSubmit()">
+                    <option value="all" th:selected="${statisticsPeriod == 'all'}">За всё время</option>
+                    <option value="90d" th:selected="${statisticsPeriod == '90d'}">90 дней</option>
+                    <option value="30d" th:selected="${statisticsPeriod == '30d'}">30 дней</option>
+                    <option value="7d" th:selected="${statisticsPeriod == '7d'}">7 дней</option>
+                </select>
+                <label class="small text-muted mb-0" for="statistics-member">Участник:</label>
+                <select id="statistics-member" name="memberId" class="form-select form-select-sm" onchange="this.form.requestSubmit()">
+                    <option value="" th:selected="${statisticsMemberId == null}">Все участники</option>
+                    <option th:each="member : ${members}"
+                            th:value="${member.user.id}"
+                            th:selected="${statisticsMemberId != null && statisticsMemberId.equals(member.user.id)}"
+                            th:text="${member.user.fullName}">Участник</option>
+                </select>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">Всего задач</div>
+                        <div class="h4 mb-0" th:text="${statistics.kpi.totalTasks}">0</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">Выполнено</div>
+                        <div class="h4 mb-0">
+                            <span th:text="${statistics.kpi.doneTasks}">0</span>
+                            <span class="small text-muted"
+                                  th:text="${'(' + #numbers.formatDecimal(statistics.kpi.completionPercent(), 1, 1) + '%)'}">(0.0%)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">Требуют ревью</div>
+                        <div class="h4 mb-0">
+                            <span th:text="${statistics.kpi.reviewRequiredTasks}">0</span>
+                            <span class="small text-muted"
+                                  th:text="${'(' + #numbers.formatDecimal(statistics.kpi.reviewRequiredPercent(), 1, 1) + '%)'}">(0.0%)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small">Просрочено</div>
+                        <div class="h4 mb-0 text-danger" th:text="${statistics.kpi.overdueTasks}">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <div class="border rounded p-3 h-100">
+                        <div class="fw-semibold mb-2">Состояние доски</div>
+                        <div class="small mb-1">BACKLOG: <span th:text="${statistics.kpi.backlogTasks}">0</span></div>
+                        <div class="small mb-1">TODO: <span th:text="${statistics.kpi.todoTasks}">0</span></div>
+                        <div class="small mb-1">IN_PROGRESS: <span th:text="${statistics.kpi.inProgressTasks}">0</span></div>
+                        <div class="small mb-1">REVIEW: <span th:text="${statistics.kpi.reviewTasks}">0</span></div>
+                        <div class="small">Открытых (не DONE): <span th:text="${statistics.kpi.openTasks}">0</span></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded p-3 h-100">
+                        <div class="fw-semibold mb-2">Временные метрики (DONE-only)</div>
+                        <div class="small mb-1">
+                            Lead time (ч): <span th:text="${statistics.duration.avgLeadHours != null ? #numbers.formatDecimal(statistics.duration.avgLeadHours, 1, 1) : 'N/A'}">N/A</span>
+                            <span class="text-muted" th:text="${' [n=' + statistics.duration.leadSampleSize + ']'}">[n=0]</span>
+                        </div>
+                        <div class="small mb-1">
+                            Cycle time (ч): <span th:text="${statistics.duration.avgCycleHours != null ? #numbers.formatDecimal(statistics.duration.avgCycleHours, 1, 1) : 'N/A'}">N/A</span>
+                            <span class="text-muted" th:text="${' [n=' + statistics.duration.cycleSampleSize + ']'}">[n=0]</span>
+                        </div>
+                        <div class="small">
+                            Возраст незавершённых (ч): <span th:text="${statistics.duration.avgOpenAgeHours != null ? #numbers.formatDecimal(statistics.duration.avgOpenAgeHours, 1, 1) : 'N/A'}">N/A</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>Участник</th>
+                        <th>На исполнении (сейчас)</th>
+                        <th>На ревью (pending)</th>
+                        <th>Ревью всего</th>
+                        <th>DONE за период</th>
+                        <th>Open CR по своим</th>
+                        <th>Lead avg (ч)</th>
+                        <th>Cycle avg (ч)</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${statistics.members == null || statistics.members.isEmpty()}">
+                        <td colspan="8" class="text-muted">Нет данных по участникам.</td>
+                    </tr>
+                    <tr th:each="memberStats : ${statistics.members}">
+                        <td th:text="${memberStats.fullName}">Имя</td>
+                        <td th:text="${memberStats.assignedOpenNow}">0</td>
+                        <td th:text="${memberStats.reviewPendingNow}">0</td>
+                        <td th:text="${memberStats.reviewTotalAllTime}">0</td>
+                        <td th:text="${memberStats.doneInPeriod}">0</td>
+                        <td th:text="${memberStats.openChangeRequestsInOwnTasks}">0</td>
+                        <td>
+                            <span th:text="${memberStats.avgLeadHours != null ? #numbers.formatDecimal(memberStats.avgLeadHours, 1, 1) : 'N/A'}">N/A</span>
+                            <span class="text-muted small" th:text="${' [n=' + memberStats.leadSampleSize + ']'}">[n=0]</span>
+                        </td>
+                        <td>
+                            <span th:text="${memberStats.avgCycleHours != null ? #numbers.formatDecimal(memberStats.avgCycleHours, 1, 1) : 'N/A'}">N/A</span>
+                            <span class="text-muted small" th:text="${' [n=' + memberStats.cycleSampleSize + ']'}">[n=0]</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</th:block>
+
 <th:block th:fragment="repositoryTab(project, repositoryArtifacts, repositorySort)">
     <div class="card" id="project-repository-tab">
         <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">

@@ -45,6 +45,13 @@
                 <i class="bi bi-archive"></i> Репозиторий
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link"
+               th:classappend="${activeTab == 'statistics'} ? 'active' : ''"
+               th:href="@{/projects/{id}(id=${project.id}, tab='statistics')}">
+                <i class="bi bi-bar-chart"></i> Статистика
+            </a>
+        </li>
         <li class="nav-item" th:if="${isOwner}">
             <a class="nav-link"
                th:classappend="${activeTab == 'settings'} ? 'active' : ''"
@@ -121,6 +128,10 @@
 
     <div th:if="${activeTab == 'repository'}">
         <div th:replace="~{projects/fragments :: repositoryTab(project=${project}, repositoryArtifacts=${repositoryArtifacts}, repositorySort=${repositorySort})}"></div>
+    </div>
+
+    <div th:if="${activeTab == 'statistics'}">
+        <div th:replace="~{projects/fragments :: statisticsTab(project=${project}, members=${members}, statistics=${statistics}, statisticsPeriod=${statisticsPeriod}, statisticsMemberId=${statisticsMemberId})}"></div>
     </div>
 
     <div th:if="${activeTab == 'settings' && isOwner}">
