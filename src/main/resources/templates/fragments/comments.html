@@ -55,6 +55,14 @@
     </div>
 </div>
 
+<div th:fragment="operationError"
+     xmlns:th="http://www.thymeleaf.org">
+    <div class="alert alert-danger py-1 px-2 small mb-2"
+         th:text="${operationErrorMessage ?: 'Не удалось выполнить действие с комментарием'}">
+        Не удалось выполнить действие с комментарием
+    </div>
+</div>
+
 <div th:fragment="editComment(comment)" th:object="${comment}"
      xmlns:th="http://www.thymeleaf.org"
      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
@@ -152,6 +160,7 @@
           xmlns:th="http://www.thymeleaf.org"
           xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <div class="border rounded p-2 bg-light">
+        <div th:if="${crErrorMessage}" class="alert alert-danger py-1 px-2 small mb-2" th:text="${crErrorMessage}"></div>
         <div th:if="${comments.isEmpty()}" class="text-muted small mb-2">Комментариев пока нет.</div>
         <th:block th:each="comment : ${comments}">
             <div th:replace="~{fragments/comments :: singleComment(comment=${comment})}"></div>

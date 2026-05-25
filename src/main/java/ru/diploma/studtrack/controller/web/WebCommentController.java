@@ -30,12 +30,17 @@ public class WebCommentController {
                              @RequestParam String content,
                              @RequestParam(name = "attachmentIds", required = false) List<UUID> attachmentIds,
                              Model model) {
-        var task = taskService.findById(taskId);
-        projectService.checkMembership(task.getProject().getId());
-
-        Comment comment = commentService.addCommentToTask(taskId, content, attachmentIds != null ? attachmentIds : List.of());
-        model.addAttribute("comment", comment);
-        return "fragments/comments :: singleComment";
+        try {
+            var task = taskService.findById(taskId);
+            projectService.checkMembership(task.getProject().getId());
+            Comment comment = commentService.addCommentToTask(taskId, content, attachmentIds != null ? attachmentIds : List.of());
+            model.addAttribute("comment", comment);
+            return "fragments/comments :: singleComment";
+        } catch (Exception e) {
+            log.warn("Ошибка добавления комментария в задачу {}: {}", taskId, e.getMessage());
+            model.addAttribute("operationErrorMessage", e.getMessage());
+            return "fragments/comments :: operationError";
+        }
     }
 
     @DeleteMapping("/comments/{commentId}")
@@ -66,15 +71,22 @@ public class WebCommentController {
     public String updateComment(@PathVariable UUID commentId,
                                 @Valid @ModelAttribute CommentUpdateRequest request,
                                 Model model) {
-        Comment existing = commentService.findById(commentId);
-        Comment comment = commentService.updateContent(
-                commentId,
-                request.getContent(),
-                request.getAttachmentIds(),
-                request.getRemovedAttachmentIds()
-        );
-        model.addAttribute("comment", comment);
-        return "fragments/comments :: singleComment";
+        try {
+            Comment existing = commentService.findById(commentId);
+            projectService.checkMembership(existing.getTask().getProject().getId());
+            Comment comment = commentService.updateContent(
+                    commentId,
+                    request.getContent(),
+                    request.getAttachmentIds() != null ? request.getAttachmentIds() : List.of(),
+                    request.getRemovedAttachmentIds() != null ? request.getRemovedAttachmentIds() : List.of()
+            );
+            model.addAttribute("comment", comment);
+            return "fragments/comments :: singleComment";
+        } catch (Exception e) {
+            log.warn("Ошибка обновления комментария {}: {}", commentId, e.getMessage());
+            model.addAttribute("operationErrorMessage", e.getMessage());
+            return "fragments/comments :: operationError";
+        }
     }
 
     @GetMapping("/change-requests/{crId}/comments")
@@ -90,7 +102,12 @@ public class WebCommentController {
                                @RequestParam String content,
                                @RequestParam(name = "attachmentIds", required = false) List<UUID> attachmentIds,
                                Model model) {
-        commentService.addCommentToChangeRequest(crId, content, attachmentIds != null ? attachmentIds : List.of());
+        try {
+            commentService.addCommentToChangeRequest(crId, content, attachmentIds != null ? attachmentIds : List.of());
+        } catch (Exception e) {
+            log.warn("Ошибка добавления комментария к замечанию {}: {}", crId, e.getMessage());
+            model.addAttribute("crErrorMessage", e.getMessage());
+        }
         List<Comment> comments = commentService.getByChangeRequest(crId);
         model.addAttribute("comments", comments);
         model.addAttribute("crId", crId);

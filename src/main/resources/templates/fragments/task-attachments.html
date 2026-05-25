@@ -1,5 +1,6 @@
 <div xmlns:th="http://www.thymeleaf.org">
     <div th:fragment="attachmentList" id="attachments-list">
+        <div th:if="${attachmentErrorMessage}" class="alert alert-danger py-1 px-2 small mb-2" th:text="${attachmentErrorMessage}"></div>
         <div th:if="${attachments == null || attachments.isEmpty()}" class="text-muted small d-flex align-items-center">
             <i class="bi bi-paperclip me-2"></i>
             <span>Файлы и ссылки не добавлены</span>
