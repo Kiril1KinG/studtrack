@@ -1,6 +1,7 @@
 <div th:fragment="assigneeList(taskId, assignees, currentUserId, isOwner, isCurrentUserAssignee)"
      id="assignees-list"
      xmlns:th="http://www.thymeleaf.org">
+    <div th:if="${assigneeErrorMessage}" class="alert alert-danger py-1 px-2 small mb-2" th:text="${assigneeErrorMessage}"></div>
     <th:block th:if="${assignees.isEmpty()}">
         <p class="text-muted">Исполнители не назначены</p>
     </th:block>

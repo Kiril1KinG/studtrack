@@ -1,4 +1,5 @@
 <div th:fragment="reviewerList(taskId, reviewers, currentUserId, isCurrentUserAssignee, isOwner)" id="reviewers-list" xmlns:th="http://www.thymeleaf.org">
+    <div th:if="${reviewerErrorMessage}" class="alert alert-danger py-1 px-2 small mb-2" th:text="${reviewerErrorMessage}"></div>
     <th:block th:if="${reviewers.isEmpty()}">
         <p class="text-muted">Ревьюеры не назначены</p>
     </th:block>

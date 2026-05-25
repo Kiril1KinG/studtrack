@@ -166,8 +166,13 @@ public class WebTaskController {
     public String addAssignee(@PathVariable UUID taskId,
                               @RequestParam UUID assigneeId,
                               Model model) {
-        getAccessibleTask(taskId);
-        taskAssigneeService.addAssignee(taskId, assigneeId);
+        try {
+            getAccessibleTask(taskId);
+            taskAssigneeService.addAssignee(taskId, assigneeId);
+        } catch (Exception e) {
+            log.warn("Ошибка добавления исполнителя в задачу {}: {}", taskId, e.getMessage());
+            model.addAttribute("assigneeErrorMessage", e.getMessage());
+        }
         fillAssigneeListModel(model, taskId);
         return "fragments/task-assignees :: assigneeList";
     }
@@ -176,8 +181,13 @@ public class WebTaskController {
     public String removeAssignee(@PathVariable UUID taskId,
                                  @PathVariable UUID assigneeId,
                                  Model model) {
-        getAccessibleTask(taskId);
-        taskAssigneeService.removeAssignee(taskId, assigneeId);
+        try {
+            getAccessibleTask(taskId);
+            taskAssigneeService.removeAssignee(taskId, assigneeId);
+        } catch (Exception e) {
+            log.warn("Ошибка удаления исполнителя {} из задачи {}: {}", assigneeId, taskId, e.getMessage());
+            model.addAttribute("assigneeErrorMessage", e.getMessage());
+        }
         fillAssigneeListModel(model, taskId);
         return "fragments/task-assignees :: assigneeList";
     }
@@ -328,11 +338,14 @@ public class WebTaskController {
     public String addReviewer(@PathVariable UUID taskId,
                               @RequestParam UUID reviewerId,
                               Model model) {
-        var task = getAccessibleTask(taskId);
-
-        taskReviewerService.addReviewer(taskId, reviewerId);
-
-        var reviewers = taskReviewerService.getReviewersByTask(taskId);
+        Task task = getAccessibleTask(taskId);
+        try {
+            taskReviewerService.addReviewer(taskId, reviewerId);
+        } catch (Exception e) {
+            log.warn("Ошибка добавления ревьюера {} в задачу {}: {}", reviewerId, taskId, e.getMessage());
+            model.addAttribute("reviewerErrorMessage", e.getMessage());
+        }
+        List<TaskReviewer> reviewers = taskReviewerService.getReviewersByTask(taskId);
         fillReviewerListModel(model, task, reviewers);
         return "fragments/task-reviewers :: reviewerList";
     }
@@ -341,11 +354,14 @@ public class WebTaskController {
     public String removeReviewer(@PathVariable UUID taskId,
                                  @PathVariable UUID reviewerId,
                                  Model model) {
-        var task = getAccessibleTask(taskId);
-
-        taskReviewerService.removeReviewer(taskId, reviewerId);
-
-        var reviewers = taskReviewerService.getReviewersByTask(taskId);
+        Task task = getAccessibleTask(taskId);
+        try {
+            taskReviewerService.removeReviewer(taskId, reviewerId);
+        } catch (Exception e) {
+            log.warn("Ошибка удаления ревьюера {} из задачи {}: {}", reviewerId, taskId, e.getMessage());
+            model.addAttribute("reviewerErrorMessage", e.getMessage());
+        }
+        List<TaskReviewer> reviewers = taskReviewerService.getReviewersByTask(taskId);
         fillReviewerListModel(model, task, reviewers);
         return "fragments/task-reviewers :: reviewerList";
     }
@@ -356,11 +372,14 @@ public class WebTaskController {
                                @RequestParam TaskReviewer.ReviewStatus status,
                                @RequestParam(required = false) String comment,
                                Model model) {
-        var task = getAccessibleTask(taskId);
-
-        taskReviewerService.submitReview(taskId, reviewerId, status, comment);
-
-        var reviewers = taskReviewerService.getReviewersByTask(taskId);
+        Task task = getAccessibleTask(taskId);
+        try {
+            taskReviewerService.submitReview(taskId, reviewerId, status, comment);
+        } catch (Exception e) {
+            log.warn("Ошибка отправки ревью reviewerId={} taskId={}: {}", reviewerId, taskId, e.getMessage());
+            model.addAttribute("reviewerErrorMessage", e.getMessage());
+        }
+        List<TaskReviewer> reviewers = taskReviewerService.getReviewersByTask(taskId);
         fillReviewerListModel(model, task, reviewers);
         return "fragments/task-reviewers :: reviewerList";
     }
