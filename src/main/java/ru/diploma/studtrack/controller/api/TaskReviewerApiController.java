@@ -1,4 +1,4 @@
-package ru.diploma.studtrack.controller;
+package ru.diploma.studtrack.controller.api;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/tasks/{taskId}/reviewers")
 @RequiredArgsConstructor
-public class TaskReviewerController {
+public class TaskReviewerApiController {
 
     private final TaskReviewerService taskReviewerService;
     private final TaskReviewerMapper taskReviewerMapper;

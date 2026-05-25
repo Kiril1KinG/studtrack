@@ -1,4 +1,4 @@
-package ru.diploma.studtrack.controller;
+package ru.diploma.studtrack.controller.api;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/projects/{projectId}/tasks")
 @RequiredArgsConstructor
-public class TaskController {
+public class TaskApiController {
 
     private final TaskService taskService;
     private final TaskMapper taskMapper;

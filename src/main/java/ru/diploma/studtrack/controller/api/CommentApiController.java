@@ -1,4 +1,4 @@
-package ru.diploma.studtrack.controller;
+package ru.diploma.studtrack.controller.api;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-public class CommentController {
+public class CommentApiController {
 
     private final CommentService commentService;
     private final CommentMapper commentMapper;
@@ -44,7 +44,7 @@ public class CommentController {
     public ResponseEntity<CommentResponse> addTaskComment(
             @PathVariable UUID taskId,
             @Valid @RequestBody CommentCreateRequest request) {
-        log.info("Запрос на добавление комментария к задаче {}: content='{}'", 
+        log.info("Запрос на добавление комментария к задаче {}: content='{}'",
                 taskId, request.getContent());
         Comment comment = commentService.addCommentToTask(taskId, request.getContent(), request.getAttachmentIds());
         log.info("Комментарий создан с id: {}", comment.getId());
@@ -56,7 +56,7 @@ public class CommentController {
             @PathVariable UUID taskId,
             @PathVariable UUID roundId,
             @Valid @RequestBody CommentCreateRequest request) {
-        log.info("Запрос на добавление комментария к задаче {}, итерации {}: content='{}'", 
+        log.info("Запрос на добавление комментария к задаче {}, итерации {}: content='{}'",
                 taskId, roundId, request.getContent());
         Comment comment = commentService.addCommentToRound(taskId, roundId, request.getContent());
         log.info("Комментарий создан с id: {}", comment.getId());

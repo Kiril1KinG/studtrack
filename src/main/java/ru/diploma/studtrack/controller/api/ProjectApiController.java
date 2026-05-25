@@ -1,4 +1,4 @@
-package ru.diploma.studtrack.controller;
+package ru.diploma.studtrack.controller.api;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -32,7 +31,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
-public class ProjectController {
+public class ProjectApiController {
 
     private final ProjectService projectService;
     private final ProjectMapper projectMapper;
@@ -64,7 +63,7 @@ public class ProjectController {
 
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody ProjectCreateRequest request) {
-        log.info("Запрос на создание проекта: name='{}', description='{}'", 
+        log.info("Запрос на создание проекта: name='{}', description='{}'",
                 request.getName(), request.getDescription());
         Project project = projectService.create(request.getName(), request.getDescription());
         log.info("Проект создан с id: {}", project.getId());
@@ -75,7 +74,7 @@ public class ProjectController {
     public ResponseEntity<ProjectResponse> updateProject(
             @PathVariable UUID id,
             @Valid @RequestBody ProjectUpdateRequest request) {
-        log.info("Запрос на обновление проекта id: {}, name='{}', description='{}'", 
+        log.info("Запрос на обновление проекта id: {}, name='{}', description='{}'",
                 id, request.getName(), request.getDescription());
         Project project = projectService.update(id, request.getName(), request.getDescription());
         log.info("Проект обновлён: {}", project.getId());
@@ -102,7 +101,7 @@ public class ProjectController {
     public ResponseEntity<ProjectMemberResponse> addMember(
             @PathVariable UUID projectId,
             @Valid @RequestBody AddMemberRequest request) {
-        log.info("Запрос на добавление участника в проект {}: userId={}, email={}", 
+        log.info("Запрос на добавление участника в проект {}: userId={}, email={}",
                 projectId, request.getUserId(), request.getEmail());
         ProjectMember member = projectService.addMember(projectId, request.getUserId());
         log.info("Участник добавлен: {}", member.getId());

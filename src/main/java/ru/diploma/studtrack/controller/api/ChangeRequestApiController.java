@@ -1,4 +1,4 @@
-package ru.diploma.studtrack.controller;
+package ru.diploma.studtrack.controller.api;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-public class ChangeRequestController {
+public class ChangeRequestApiController {
 
     private final ChangeRequestService changeRequestService;
     private final ChangeRequestMapper changeRequestMapper;
@@ -62,7 +62,7 @@ public class ChangeRequestController {
             @PathVariable UUID taskId,
             @PathVariable UUID roundId,
             @Valid @RequestBody ChangeRequestCreateRequest request) {
-        log.info("Запрос на создание замечания в задаче {}, итерации {}: content='{}'", 
+        log.info("Запрос на создание замечания в задаче {}, итерации {}: content='{}'",
                 taskId, roundId, request.getContent());
         ChangeRequest changeRequest = changeRequestService.create(taskId, roundId, request.getContent());
         log.info("Замечание создано с id: {}", changeRequest.getId());

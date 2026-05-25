@@ -1,4 +1,4 @@
-package ru.diploma.studtrack.controller;
+package ru.diploma.studtrack.controller.api;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +20,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/tasks")
 @RequiredArgsConstructor
-public class AttachmentController {
+public class AttachmentApiController {
 
     private final TaskAttachmentService taskAttachmentService;
 
