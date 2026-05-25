@@ -15,6 +15,7 @@ import ru.diploma.studtrack.model.Task;
 import ru.diploma.studtrack.model.User;
 import ru.diploma.studtrack.service.ProjectService;
 import ru.diploma.studtrack.service.ProjectStatisticsService;
+import ru.diploma.studtrack.service.AttachmentHistoryValueService;
 import ru.diploma.studtrack.service.TaskAttachmentService;
 import ru.diploma.studtrack.service.TaskHistoryService;
 import ru.diploma.studtrack.service.TaskService;
@@ -45,6 +46,8 @@ class WebProjectControllerStatisticsTest {
     private TaskHistoryService taskHistoryService;
     @Mock
     private ProjectStatisticsService projectStatisticsService;
+    @Mock
+    private AttachmentHistoryValueService attachmentHistoryValueService;
 
     private WebProjectController controller;
     private UUID projectId;
@@ -61,7 +64,8 @@ class WebProjectControllerStatisticsTest {
                 userService,
                 taskAttachmentService,
                 taskHistoryService,
-                projectStatisticsService
+                projectStatisticsService,
+                attachmentHistoryValueService
         );
 
         projectId = UUID.randomUUID();
