@@ -37,8 +37,7 @@ public class WebAttachmentController {
 
     @GetMapping("/{taskId}/attachments")
     public String getAttachments(@PathVariable UUID taskId, Model model) {
-        Task task = taskService.findById(taskId);
-        projectService.checkMembership(task.getProject().getId());
+        Task task = getAccessibleTask(taskId);
         List<TaskAttachment> attachments = taskAttachmentService.getTaskArtifacts(taskId);
         UUID currentUserId = userService.getCurrentUserId();
         model.addAttribute("taskId", taskId);
@@ -52,25 +51,23 @@ public class WebAttachmentController {
     public String uploadAttachment(@PathVariable UUID taskId,
                                    @RequestParam("files") List<MultipartFile> files,
                                    Model model) {
-        try {
-            if (files != null) {
-                for (MultipartFile file : files) {
-                    if (file != null && !file.isEmpty()) {
-                        TaskAttachment created = taskAttachmentService.addAttachment(taskId, file);
-                        Task task = created.getTask();
-                        taskHistoryService.recordFieldChange(
-                                task,
-                                userService.getCurrentUser(),
-                                "attachments",
-                                null,
-                                attachmentHistoryValueService.historyValueFor(created)
-                        );
-                    }
+        executeAttachmentOperation(taskId, model, () -> {
+            if (files == null) {
+                return;
+            }
+            for (MultipartFile file : files) {
+                if (file != null && !file.isEmpty()) {
+                    TaskAttachment created = taskAttachmentService.addAttachment(taskId, file);
+                    taskHistoryService.recordFieldChange(
+                            created.getTask(),
+                            userService.getCurrentUser(),
+                            "attachments",
+                            null,
+                            attachmentHistoryValueService.historyValueFor(created)
+                    );
                 }
             }
-        } catch (Exception e) {
-            model.addAttribute("attachmentErrorMessage", e.getMessage());
-        }
+        });
         return getAttachments(taskId, model);
     }
 
@@ -79,7 +76,7 @@ public class WebAttachmentController {
                           @RequestParam String url,
                           @RequestParam(required = false) String title,
                           Model model) {
-        try {
+        executeAttachmentOperation(taskId, model, () -> {
             TaskAttachment created = taskAttachmentService.addLink(taskId, url, title);
             taskHistoryService.recordFieldChange(
                     created.getTask(),
@@ -88,9 +85,7 @@ public class WebAttachmentController {
                     null,
                     attachmentHistoryValueService.historyValueFor(created)
             );
-        } catch (Exception e) {
-            model.addAttribute("attachmentErrorMessage", e.getMessage());
-        }
+        });
         return getAttachments(taskId, model);
     }
 
@@ -136,6 +131,23 @@ public class WebAttachmentController {
             }
             model.addAttribute("attachmentErrorMessage", e.getMessage());
             return "fragments/task-attachments :: attachmentList";
+        }
+    }
+
+    private Task getAccessibleTask(UUID taskId) {
+        Task task = taskService.findById(taskId);
+        projectService.checkMembership(task.getProject().getId());
+        return task;
+    }
+
+    private void executeAttachmentOperation(UUID taskId,
+                                            Model model,
+                                            Runnable action) {
+        try {
+            getAccessibleTask(taskId);
+            action.run();
+        } catch (Exception e) {
+            model.addAttribute("attachmentErrorMessage", e.getMessage());
         }
     }
 }
