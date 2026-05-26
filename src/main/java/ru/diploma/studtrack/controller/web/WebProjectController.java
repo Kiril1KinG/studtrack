@@ -166,7 +166,7 @@ public class WebProjectController {
     public String createTask(@PathVariable UUID projectId,
                              @Valid @ModelAttribute TaskCreateRequest request,
                              Model model) {
-        projectService.checkMembership(projectId);
+        getAccessibleProject(projectId);
 
         taskService.create(
                 projectId,
@@ -178,9 +178,7 @@ public class WebProjectController {
                 request.getDeadline()
         );
 
-        Project project = getAccessibleProject(projectId);
-        List<Task> tasks = taskService.getTasksByProject(projectId);
-        addKanbanAttributes(model, project, tasks);
+        addProjectBoardModel(model, projectId);
 
         return "projects/fragments :: kanbanBoard";
     }
@@ -268,6 +266,12 @@ public class WebProjectController {
         model.addAttribute("reviewStateByTaskId", kanbanModel.reviewStateByTaskId());
         model.addAttribute("reviewStatsByTaskId", kanbanModel.reviewStatsByTaskId());
         model.addAttribute("statuses", Task.TaskStatus.values());
+    }
+
+    private void addProjectBoardModel(Model model, UUID projectId) {
+        Project project = getAccessibleProject(projectId);
+        List<Task> tasks = taskService.getTasksByProject(projectId);
+        addKanbanAttributes(model, project, tasks);
     }
 
     private String executeProjectAction(UUID projectId,

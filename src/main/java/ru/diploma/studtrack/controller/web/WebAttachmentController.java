@@ -60,13 +60,7 @@ public class WebAttachmentController {
             for (MultipartFile file : files) {
                 if (file != null && !file.isEmpty()) {
                     TaskAttachment created = taskAttachmentService.addAttachment(taskId, file);
-                    taskHistoryService.recordFieldChange(
-                            created.getTask(),
-                            userService.getCurrentUser(),
-                            "attachments",
-                            null,
-                            attachmentHistoryValueService.historyValueFor(created)
-                    );
+                    recordAttachmentAdded(created);
                 }
             }
         });
@@ -80,13 +74,7 @@ public class WebAttachmentController {
                           Model model) {
         executeAttachmentOperation(taskId, model, () -> {
             TaskAttachment created = taskAttachmentService.addLink(taskId, url, title);
-            taskHistoryService.recordFieldChange(
-                    created.getTask(),
-                    userService.getCurrentUser(),
-                    "attachments",
-                    null,
-                    attachmentHistoryValueService.historyValueFor(created)
-            );
+            recordAttachmentAdded(created);
         });
         return getAttachments(taskId, model);
     }
@@ -129,8 +117,7 @@ public class WebAttachmentController {
         } catch (Exception e) {
             String message = webErrorMessageService.resolve(e, "Не удалось удалить вложение. Попробуйте еще раз.");
             if (taskId != null) {
-                model.addAttribute("attachmentErrorMessage", message);
-                return getAttachments(taskId, model);
+                return getAttachmentsWithError(taskId, model, message);
             }
             model.addAttribute("attachmentErrorMessage", message);
             return "fragments/task-attachments :: attachmentList";
@@ -150,10 +137,26 @@ public class WebAttachmentController {
             getAccessibleTask(taskId);
             action.run();
         } catch (Exception e) {
-            model.addAttribute(
-                    "attachmentErrorMessage",
+            getAttachmentsWithError(
+                    taskId,
+                    model,
                     webErrorMessageService.resolve(e, "Не удалось выполнить операцию с вложением. Попробуйте еще раз.")
             );
         }
+    }
+
+    private void recordAttachmentAdded(TaskAttachment attachment) {
+        taskHistoryService.recordFieldChange(
+                attachment.getTask(),
+                userService.getCurrentUser(),
+                "attachments",
+                null,
+                attachmentHistoryValueService.historyValueFor(attachment)
+        );
+    }
+
+    private String getAttachmentsWithError(UUID taskId, Model model, String errorMessage) {
+        model.addAttribute("attachmentErrorMessage", errorMessage);
+        return getAttachments(taskId, model);
     }
 }
