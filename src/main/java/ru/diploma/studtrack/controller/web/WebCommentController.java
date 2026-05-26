@@ -89,9 +89,7 @@ public class WebCommentController {
 
     @GetMapping("/change-requests/{crId}/comments")
     public String getCrComments(@PathVariable UUID crId, Model model) {
-        List<Comment> comments = commentService.getByChangeRequest(crId);
-        model.addAttribute("comments", comments);
-        model.addAttribute("crId", crId);
+        addCrCommentsToModel(crId, model);
         return "fragments/comments :: crCommentList";
     }
 
@@ -105,9 +103,7 @@ public class WebCommentController {
                 model,
                 () -> commentService.addCommentToChangeRequest(crId, content, safeIds(attachmentIds))
         );
-        List<Comment> comments = commentService.getByChangeRequest(crId);
-        model.addAttribute("comments", comments);
-        model.addAttribute("crId", crId);
+        addCrCommentsToModel(crId, model);
         return "fragments/comments :: crCommentList";
     }
 
@@ -124,6 +120,12 @@ public class WebCommentController {
 
     private List<UUID> safeIds(List<UUID> ids) {
         return ids != null ? ids : List.of();
+    }
+
+    private void addCrCommentsToModel(UUID crId, Model model) {
+        List<Comment> comments = commentService.getByChangeRequest(crId);
+        model.addAttribute("comments", comments);
+        model.addAttribute("crId", crId);
     }
 
     private String executeOperation(Model model,

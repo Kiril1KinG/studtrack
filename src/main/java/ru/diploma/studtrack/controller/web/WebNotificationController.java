@@ -46,25 +46,31 @@ public class WebNotificationController {
 
     @GetMapping("/dropdown")
     public String dropdown(Model model) {
-        return executeDropdownOperation(model, "Ошибка загрузки dropdown уведомлений", () -> {
-            fillDropdownModel(model);
-        });
+        return executeDropdownOperation(model, "Ошибка загрузки dropdown уведомлений", () -> fillDropdownModel(model));
     }
 
     @PostMapping("/{id}/read")
     public String markRead(@PathVariable UUID id, Model model) {
-        return executeDropdownOperation(model, "Ошибка отметки уведомления " + id + " как прочитанного", () -> {
-            notificationService.markAsRead(id);
-            fillDropdownModel(model);
-        });
+        return executeDropdownOperation(
+                model,
+                "Ошибка отметки уведомления " + id + " как прочитанного",
+                () -> {
+                    notificationService.markAsRead(id);
+                    fillDropdownModel(model);
+                }
+        );
     }
 
     @PostMapping("/read-all")
     public String markAllRead(Model model) {
-        return executeDropdownOperation(model, "Ошибка отметки всех уведомлений как прочитанных", () -> {
-            notificationService.markAllAsReadForCurrentUser();
-            fillDropdownModel(model);
-        });
+        return executeDropdownOperation(
+                model,
+                "Ошибка отметки всех уведомлений как прочитанных",
+                () -> {
+                    notificationService.markAllAsReadForCurrentUser();
+                    fillDropdownModel(model);
+                }
+        );
     }
 
     private void fillDropdownModel(Model model) {
