@@ -19,6 +19,7 @@ import ru.diploma.studtrack.service.TaskAttachmentService;
 import ru.diploma.studtrack.service.TaskHistoryService;
 import ru.diploma.studtrack.service.TaskService;
 import ru.diploma.studtrack.service.UserService;
+import ru.diploma.studtrack.service.WebErrorMessageService;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,6 +35,7 @@ public class WebAttachmentController {
     private final ProjectService projectService;
     private final TaskHistoryService taskHistoryService;
     private final AttachmentHistoryValueService attachmentHistoryValueService;
+    private final WebErrorMessageService webErrorMessageService;
 
     @GetMapping("/{taskId}/attachments")
     public String getAttachments(@PathVariable UUID taskId, Model model) {
@@ -125,11 +127,12 @@ public class WebAttachmentController {
             taskAttachmentService.deleteAttachment(attachmentId);
             return getAttachments(taskId, model);
         } catch (Exception e) {
+            String message = webErrorMessageService.resolve(e, "Не удалось удалить вложение. Попробуйте еще раз.");
             if (taskId != null) {
-                model.addAttribute("attachmentErrorMessage", e.getMessage());
+                model.addAttribute("attachmentErrorMessage", message);
                 return getAttachments(taskId, model);
             }
-            model.addAttribute("attachmentErrorMessage", e.getMessage());
+            model.addAttribute("attachmentErrorMessage", message);
             return "fragments/task-attachments :: attachmentList";
         }
     }
@@ -147,7 +150,10 @@ public class WebAttachmentController {
             getAccessibleTask(taskId);
             action.run();
         } catch (Exception e) {
-            model.addAttribute("attachmentErrorMessage", e.getMessage());
+            model.addAttribute(
+                    "attachmentErrorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось выполнить операцию с вложением. Попробуйте еще раз.")
+            );
         }
     }
 }

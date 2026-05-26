@@ -11,6 +11,7 @@ import ru.diploma.studtrack.model.Comment;
 import ru.diploma.studtrack.service.CommentService;
 import ru.diploma.studtrack.service.TaskService;
 import ru.diploma.studtrack.service.ProjectService;
+import ru.diploma.studtrack.service.WebErrorMessageService;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +25,7 @@ public class WebCommentController {
     private final CommentService commentService;
     private final TaskService taskService;
     private final ProjectService projectService;
+    private final WebErrorMessageService webErrorMessageService;
 
     @PostMapping("/{taskId}/comments")
     public String addComment(@PathVariable UUID taskId,
@@ -131,7 +133,10 @@ public class WebCommentController {
             return action.get();
         } catch (Exception e) {
             log.warn("{}: {}", logMessage, e.getMessage());
-            model.addAttribute("operationErrorMessage", e.getMessage());
+            model.addAttribute(
+                    "operationErrorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось выполнить операцию с комментарием. Попробуйте еще раз.")
+            );
             return "fragments/comments :: operationError";
         }
     }
@@ -143,7 +148,10 @@ public class WebCommentController {
             action.run();
         } catch (Exception e) {
             log.warn("Ошибка добавления комментария к замечанию {}: {}", crId, e.getMessage());
-            model.addAttribute("crErrorMessage", e.getMessage());
+            model.addAttribute(
+                    "crErrorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось добавить комментарий к замечанию. Попробуйте еще раз.")
+            );
         }
     }
 }

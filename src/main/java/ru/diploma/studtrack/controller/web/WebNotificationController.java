@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import ru.diploma.studtrack.service.NotificationService;
+import ru.diploma.studtrack.service.WebErrorMessageService;
 
 import java.util.UUID;
 
@@ -20,6 +21,7 @@ import java.util.UUID;
 public class WebNotificationController {
 
     private final NotificationService notificationService;
+    private final WebErrorMessageService webErrorMessageService;
 
     @GetMapping
     public String list(@RequestParam(name = "unreadOnly", defaultValue = "false") boolean unreadOnly,
@@ -83,7 +85,10 @@ public class WebNotificationController {
             action.run();
         } catch (Exception e) {
             log.warn("{}: {}", logPrefix, e.getMessage());
-            fillDropdownFallbackModel(model, e.getMessage());
+            fillDropdownFallbackModel(
+                    model,
+                    webErrorMessageService.resolve(e, "Не удалось загрузить уведомления. Попробуйте обновить страницу.")
+            );
         }
         return "fragments/notifications :: dropdownList";
     }

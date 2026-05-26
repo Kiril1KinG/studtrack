@@ -11,6 +11,7 @@ import ru.diploma.studtrack.model.User;
 import ru.diploma.studtrack.service.ProjectService;
 import ru.diploma.studtrack.service.TaskService;
 import ru.diploma.studtrack.service.UserService;
+import ru.diploma.studtrack.service.WebErrorMessageService;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +24,7 @@ public class WebProfileController {
     private final UserService userService;
     private final ProjectService projectService;
     private final TaskService taskService;
+    private final WebErrorMessageService webErrorMessageService;
 
     @GetMapping
     public String viewProfile(Model model) {
@@ -105,7 +107,10 @@ public class WebProfileController {
             action.run();
             redirectAttributes.addFlashAttribute("successMessage", successMessage);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось выполнить действие в профиле. Попробуйте еще раз.")
+            );
         }
         return "redirect:/profile";
     }

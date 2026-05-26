@@ -22,6 +22,7 @@ import ru.diploma.studtrack.service.TaskHistoryService;
 import ru.diploma.studtrack.service.TaskService;
 import ru.diploma.studtrack.service.UserService;
 import ru.diploma.studtrack.service.ProjectStatisticsService;
+import ru.diploma.studtrack.service.WebErrorMessageService;
 
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ public class WebProjectController {
     private final TaskHistoryService taskHistoryService;
     private final ProjectStatisticsService projectStatisticsService;
     private final AttachmentHistoryValueService attachmentHistoryValueService;
+    private final WebErrorMessageService webErrorMessageService;
 
     @GetMapping
     public String listProjects(Model model) {
@@ -279,7 +281,10 @@ public class WebProjectController {
             return successRedirect;
         } catch (Exception e) {
             log.warn("Ошибка {} проекта {}: {}", actionLabel, projectId, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось выполнить действие для проекта. Попробуйте еще раз.")
+            );
             return failureRedirect;
         }
     }

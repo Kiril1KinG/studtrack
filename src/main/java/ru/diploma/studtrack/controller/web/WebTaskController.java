@@ -43,6 +43,7 @@ public class WebTaskController {
     private final ChangeRequestService changeRequestService;
     private final TaskHistoryService taskHistoryService;
     private final TaskAttachmentService taskAttachmentService;
+    private final WebErrorMessageService webErrorMessageService;
 
     @GetMapping("/my")
     public String myTasks(@RequestParam(required = false) Task.Priority priority,
@@ -171,7 +172,10 @@ public class WebTaskController {
             taskAssigneeService.addAssignee(taskId, assigneeId);
         } catch (Exception e) {
             log.warn("Ошибка добавления исполнителя в задачу {}: {}", taskId, e.getMessage());
-            model.addAttribute("assigneeErrorMessage", e.getMessage());
+            model.addAttribute(
+                    "assigneeErrorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось добавить исполнителя. Попробуйте еще раз.")
+            );
         }
         fillAssigneeListModel(model, taskId);
         return "fragments/task-assignees :: assigneeList";
@@ -186,7 +190,10 @@ public class WebTaskController {
             taskAssigneeService.removeAssignee(taskId, assigneeId);
         } catch (Exception e) {
             log.warn("Ошибка удаления исполнителя {} из задачи {}: {}", assigneeId, taskId, e.getMessage());
-            model.addAttribute("assigneeErrorMessage", e.getMessage());
+            model.addAttribute(
+                    "assigneeErrorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось удалить исполнителя. Попробуйте еще раз.")
+            );
         }
         fillAssigneeListModel(model, taskId);
         return "fragments/task-assignees :: assigneeList";
@@ -234,7 +241,10 @@ public class WebTaskController {
             return redirectToTask(id);
         } catch (Exception e) {
             log.warn("Ошибка смены статуса задачи {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось изменить статус задачи. Попробуйте еще раз.")
+            );
             return redirectToTask(id);
         }
     }
@@ -343,7 +353,10 @@ public class WebTaskController {
             taskReviewerService.addReviewer(taskId, reviewerId);
         } catch (Exception e) {
             log.warn("Ошибка добавления ревьюера {} в задачу {}: {}", reviewerId, taskId, e.getMessage());
-            model.addAttribute("reviewerErrorMessage", e.getMessage());
+            model.addAttribute(
+                    "reviewerErrorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось добавить ревьюера. Попробуйте еще раз.")
+            );
         }
         List<TaskReviewer> reviewers = taskReviewerService.getReviewersByTask(taskId);
         fillReviewerListModel(model, task, reviewers);
@@ -359,7 +372,10 @@ public class WebTaskController {
             taskReviewerService.removeReviewer(taskId, reviewerId);
         } catch (Exception e) {
             log.warn("Ошибка удаления ревьюера {} из задачи {}: {}", reviewerId, taskId, e.getMessage());
-            model.addAttribute("reviewerErrorMessage", e.getMessage());
+            model.addAttribute(
+                    "reviewerErrorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось удалить ревьюера. Попробуйте еще раз.")
+            );
         }
         List<TaskReviewer> reviewers = taskReviewerService.getReviewersByTask(taskId);
         fillReviewerListModel(model, task, reviewers);
@@ -377,7 +393,10 @@ public class WebTaskController {
             taskReviewerService.submitReview(taskId, reviewerId, status, comment);
         } catch (Exception e) {
             log.warn("Ошибка отправки ревью reviewerId={} taskId={}: {}", reviewerId, taskId, e.getMessage());
-            model.addAttribute("reviewerErrorMessage", e.getMessage());
+            model.addAttribute(
+                    "reviewerErrorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось отправить ревью. Попробуйте еще раз.")
+            );
         }
         List<TaskReviewer> reviewers = taskReviewerService.getReviewersByTask(taskId);
         fillReviewerListModel(model, task, reviewers);
@@ -425,7 +444,10 @@ public class WebTaskController {
             action.run();
         } catch (Exception e) {
             log.warn("Ошибка {} для задачи {}: {}", actionLabel, taskId, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось выполнить действие для задачи. Попробуйте еще раз.")
+            );
         }
         return redirectToTask(taskId);
     }
