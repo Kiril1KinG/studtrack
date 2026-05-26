@@ -55,7 +55,7 @@ public class UserService {
     }
 
     @Transactional
-    public User register(String email, String password, String fullName, User.Role role) {
+    public User register(String email, String password, String fullName) {
         if (existsByEmail(email)) {
             throw new AlreadyExistsException("Пользователь", "email", email);
         }
@@ -63,7 +63,6 @@ public class UserService {
                 .email(email)
                 .password(passwordEncoder.encode(password))
                 .fullName(fullName)
-                .role(role != null ? role : User.Role.STUDENT)
                 .build();
         return userRepository.save(user);
     }

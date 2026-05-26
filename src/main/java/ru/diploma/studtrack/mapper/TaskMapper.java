@@ -59,7 +59,6 @@ public interface TaskMapper {
                 .id(first.getUser().getId())
                 .email(first.getUser().getEmail())
                 .fullName(first.getUser().getFullName())
-                .role(first.getUser().getRole())
                 .createdAt(first.getUser().getCreatedAt())
                 .build();
     }
@@ -74,7 +73,6 @@ public interface TaskMapper {
                         .id(user.getId())
                         .email(user.getEmail())
                         .fullName(user.getFullName())
-                        .role(user.getRole())
                         .createdAt(user.getCreatedAt())
                         .build())
                 .collect(Collectors.toList());

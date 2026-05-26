@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import ru.diploma.studtrack.model.User;
 import ru.diploma.studtrack.service.UserService;
 
 @Slf4j
@@ -42,10 +41,9 @@ public class AuthController {
     @PostMapping("/register")
     public String register(@RequestParam String email,
                            @RequestParam String password,
-                           @RequestParam String fullName,
-                           @RequestParam(defaultValue = "STUDENT") User.Role role) {
+                           @RequestParam String fullName) {
         log.info("Регистрация нового пользователя: {}", email);
-        userService.register(email, password, fullName, role);
+        userService.register(email, password, fullName);
         return "redirect:/auth/login?registered";
     }
 }

@@ -2,8 +2,6 @@ package ru.diploma.studtrack.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
@@ -46,10 +44,6 @@ public class User {
     @Column(name = "avatar_content_type")
     private String avatarContentType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
-
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -74,8 +68,4 @@ public class User {
 
     @OneToMany(mappedBy = "author")
     private Set<ChangeRequest> authoredChangeRequests = new HashSet<>();
-
-    public enum Role {
-        STUDENT, TEACHER
-    }
 }
