@@ -20,6 +20,7 @@ import ru.diploma.studtrack.service.TaskAttachmentService;
 import ru.diploma.studtrack.service.TaskHistoryService;
 import ru.diploma.studtrack.service.TaskService;
 import ru.diploma.studtrack.service.UserService;
+import ru.diploma.studtrack.service.WebErrorMessageService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,6 +49,8 @@ class WebProjectControllerStatisticsTest {
     private ProjectStatisticsService projectStatisticsService;
     @Mock
     private AttachmentHistoryValueService attachmentHistoryValueService;
+    @Mock
+    private WebErrorMessageService webErrorMessageService;
 
     private WebProjectController controller;
     private UUID projectId;
@@ -65,7 +68,8 @@ class WebProjectControllerStatisticsTest {
                 taskAttachmentService,
                 taskHistoryService,
                 projectStatisticsService,
-                attachmentHistoryValueService
+                attachmentHistoryValueService,
+                webErrorMessageService
         );
 
         projectId = UUID.randomUUID();
