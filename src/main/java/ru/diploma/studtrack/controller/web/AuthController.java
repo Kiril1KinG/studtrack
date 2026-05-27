@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.diploma.studtrack.service.UserService;
 
 @Slf4j
@@ -41,11 +42,22 @@ public class AuthController {
     @PostMapping("/register")
     public String register(@RequestParam String email,
                            @RequestParam String password,
+                           @RequestParam String confirmPassword,
                            @RequestParam String lastName,
                            @RequestParam String firstName,
-                           @RequestParam(required = false) String patronymic) {
+                           @RequestParam(required = false) String patronymic,
+                           RedirectAttributes redirectAttributes) {
+        if (!password.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("error", "Пароли не совпадают");
+            return "redirect:/auth/register";
+        }
         log.info("Регистрация нового пользователя: {}", email);
-        userService.register(email, password, lastName, firstName, patronymic);
-        return "redirect:/auth/login?registered";
+        try {
+            userService.register(email, password, lastName, firstName, patronymic);
+            return "redirect:/auth/login?registered";
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/auth/register";
+        }
     }
 }

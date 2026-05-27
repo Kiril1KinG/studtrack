@@ -63,6 +63,7 @@ public class UserService {
         if (existsByEmail(email)) {
             throw new AlreadyExistsException("Пользователь", "email", email);
         }
+        validatePasswordComplexity(password);
         String normalizedLastName = normalizeNamePart(lastName, true, "Фамилия");
         String normalizedFirstName = normalizeNamePart(firstName, true, "Имя");
         String normalizedPatronymic = normalizeNamePart(patronymic, false, "Отчество");
@@ -175,5 +176,25 @@ public class UserService {
             builder.append(" ").append(patronymic);
         }
         return builder.toString();
+    }
+
+    private void validatePasswordComplexity(String password) {
+        if (password == null || password.length() < 8) {
+            throw new IllegalArgumentException("Пароль должен быть не короче 8 символов и содержать буквы и цифры");
+        }
+        boolean hasLetter = false;
+        boolean hasDigit = false;
+        for (int i = 0; i < password.length(); i++) {
+            char ch = password.charAt(i);
+            if (Character.isLetter(ch)) {
+                hasLetter = true;
+            } else if (Character.isDigit(ch)) {
+                hasDigit = true;
+            }
+            if (hasLetter && hasDigit) {
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Пароль должен быть не короче 8 символов и содержать буквы и цифры");
     }
 }
