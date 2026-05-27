@@ -16,6 +16,9 @@ public class UserResponse {
 
     private UUID id;
     private String email;
+    private String lastName;
+    private String firstName;
+    private String patronymic;
     private String fullName;
     private LocalDateTime createdAt;
 }

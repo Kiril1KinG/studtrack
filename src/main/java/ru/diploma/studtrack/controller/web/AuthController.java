@@ -41,9 +41,11 @@ public class AuthController {
     @PostMapping("/register")
     public String register(@RequestParam String email,
                            @RequestParam String password,
-                           @RequestParam String fullName) {
+                           @RequestParam String lastName,
+                           @RequestParam String firstName,
+                           @RequestParam(required = false) String patronymic) {
         log.info("Регистрация нового пользователя: {}", email);
-        userService.register(email, password, fullName);
+        userService.register(email, password, lastName, firstName, patronymic);
         return "redirect:/auth/login?registered";
     }
 }

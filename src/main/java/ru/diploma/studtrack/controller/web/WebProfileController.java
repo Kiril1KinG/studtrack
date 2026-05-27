@@ -29,9 +29,6 @@ public class WebProfileController {
     @GetMapping
     public String viewProfile(Model model) {
         User currentUser = userService.getCurrentUser();
-        if (currentUser.getFullName() == null || currentUser.getFullName().isBlank()) {
-            currentUser.setFullName("User");
-        }
 
         List<Task> assignedTasks = taskService.getAssignedToMe().stream()
                 .filter(t -> t.getStatus() != Task.TaskStatus.DONE)
@@ -46,7 +43,9 @@ public class WebProfileController {
     }
 
     @PostMapping("/update")
-    public String updateProfile(@RequestParam String fullName,
+    public String updateProfile(@RequestParam String lastName,
+                                @RequestParam String firstName,
+                                @RequestParam(required = false) String patronymic,
                                 RedirectAttributes redirectAttributes) {
         return executeProfileAction(
                 redirectAttributes,
@@ -54,7 +53,9 @@ public class WebProfileController {
                 () -> {
                     User current = userService.getCurrentUser();
                     User updated = User.builder()
-                            .fullName(fullName)
+                            .lastName(lastName)
+                            .firstName(firstName)
+                            .patronymic(patronymic)
                             .build();
                     userService.update(current.getId(), updated);
                 }

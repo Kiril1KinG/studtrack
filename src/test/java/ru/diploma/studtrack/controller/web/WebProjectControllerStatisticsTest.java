@@ -74,7 +74,7 @@ class WebProjectControllerStatisticsTest {
 
         projectId = UUID.randomUUID();
         memberId = UUID.randomUUID();
-        currentUser = User.builder().id(UUID.randomUUID()).fullName("Owner").email("o@test").build();
+        currentUser = User.builder().id(UUID.randomUUID()).lastName("Owner").firstName("Test").email("o@test").build();
         project = Project.builder().id(projectId).name("Project").owner(currentUser).build();
         statistics = new ProjectStatisticsResponse(
                 ProjectStatisticsFilter.Period.DAYS_30,
