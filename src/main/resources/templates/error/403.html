@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html th:replace="~{layout :: layout(content=~{::main})}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main>
+    <div class="row justify-content-center py-5">
+        <div class="col-lg-6 col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center p-5">
+                    <div class="display-4 fw-bold text-warning mb-2" th:text="${statusCode} ?: 403">403</div>
+                    <h1 class="h4 mb-3" th:text="${pageTitle} ?: 'Доступ запрещен'">Доступ запрещен</h1>
+                    <p class="text-muted mb-4" th:text="${errorMessage} ?: 'У вас недостаточно прав для выполнения этого действия.'">
+                        У вас недостаточно прав для выполнения этого действия.
+                    </p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <a class="btn btn-primary" th:href="@{/projects}">
+                            <i class="bi bi-grid me-1"></i>К проектам
+                        </a>
+                        <a class="btn btn-outline-secondary" th:href="@{/profile}">
+                            <i class="bi bi-person me-1"></i>Профиль
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

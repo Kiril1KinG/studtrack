@@ -13,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import ru.diploma.studtrack.service.CustomUserDetailsService;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -62,6 +64,10 @@ public class SecurityConfig {
             )
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/api/**")
+            )
+            .exceptionHandling(exception -> exception
+                .accessDeniedHandler((request, response, accessDeniedException) ->
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN))
             );
 
         return http.build();

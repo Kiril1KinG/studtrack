@@ -29,42 +29,21 @@ public class TaskHistoryService {
         return switch (entry.getEventType()) {
             case TASK_FIELD_CHANGED -> {
                 if ("attachments".equals(entry.getFieldName())) {
-                    String oldVal = entry.getOldValue();
-                    String newVal = entry.getNewValue();
-                    if ((newVal == null || newVal.isBlank()) && oldVal != null && !oldVal.isBlank()) {
-                        yield isLinkHistoryValue(oldVal)
-                                ? "удалил(а) ссылку из задачи: " + safeName(stripHistoryPrefix(oldVal))
-                                : "удалил(а) файл из задачи: " + safeName(stripHistoryPrefix(oldVal));
-                    }
-                    if (newVal != null && !newVal.isBlank()) {
-                        yield isLinkHistoryValue(newVal)
-                                ? "добавил(а) ссылку к задаче: " + safeName(stripHistoryPrefix(newVal))
-                                : "прикрепил(а) файл к задаче: " + safeName(stripHistoryPrefix(newVal));
-                    }
-                    yield "изменил(а) вложения задачи";
+                    yield attachmentChangeMessage(entry.getOldValue(), entry.getNewValue());
                 }
                 yield "изменил(а) " + fieldLabel(entry.getFieldName()) + ": "
                         + valueLabel(entry.getFieldName(), entry.getOldValue()) + " -> "
                         + valueLabel(entry.getFieldName(), entry.getNewValue());
             }
-            case TASK_STATUS_CHANGED -> {
-                String oldStatusRaw = extractValue(entry.getDetailsJson(), "oldStatus");
-                String newStatusRaw = extractValue(entry.getDetailsJson(), "newStatus");
-                String newStatus = mapTaskStatus(newStatusRaw);
-                if (oldStatusRaw == null || oldStatusRaw.isBlank()) {
-                    yield "изменил(а) статус задачи на " + newStatus;
-                }
-                String oldStatus = mapTaskStatus(oldStatusRaw);
-                yield "изменил(а) статус задачи: " + oldStatus + " -> " + newStatus;
-            }
-            case ASSIGNEE_ADDED -> "назначил(а) исполнителя " + safeName(extractValue(entry.getDetailsJson(), "assigneeName"));
-            case ASSIGNEE_REMOVED -> "снял(а) исполнителя " + safeName(extractValue(entry.getDetailsJson(), "assigneeName"));
-            case REVIEWER_ADDED -> "добавил(а) ревьюера " + safeName(extractValue(entry.getDetailsJson(), "reviewerName"));
-            case REVIEWER_REMOVED -> "удалил(а) ревьюера " + safeName(extractValue(entry.getDetailsJson(), "reviewerName"));
-            case REVIEW_SUBMITTED -> "отправил(а) ревью: " + mapReviewStatus(extractValue(entry.getDetailsJson(), "status"));
-            case REVIEW_ROUND_CREATED -> "создал(а) раунд ревью #" + safeNumber(extractValue(entry.getDetailsJson(), "roundNumber"));
-            case REVIEW_ROUND_COMPLETED -> "завершил(а) раунд ревью #" + safeNumber(extractValue(entry.getDetailsJson(), "roundNumber"));
-            case REVIEW_ROUND_CANCELED -> "отменил(а) раунд ревью #" + safeNumber(extractValue(entry.getDetailsJson(), "roundNumber"));
+            case TASK_STATUS_CHANGED -> statusChangeMessage(entry.getDetailsJson());
+            case ASSIGNEE_ADDED -> "назначил(а) исполнителя " + safeName(detailValue(entry, "assigneeName"));
+            case ASSIGNEE_REMOVED -> "снял(а) исполнителя " + safeName(detailValue(entry, "assigneeName"));
+            case REVIEWER_ADDED -> "добавил(а) ревьюера " + safeName(detailValue(entry, "reviewerName"));
+            case REVIEWER_REMOVED -> "удалил(а) ревьюера " + safeName(detailValue(entry, "reviewerName"));
+            case REVIEW_SUBMITTED -> "отправил(а) ревью: " + mapReviewStatus(detailValue(entry, "status"));
+            case REVIEW_ROUND_CREATED -> "создал(а) раунд ревью #" + safeNumber(detailValue(entry, "roundNumber"));
+            case REVIEW_ROUND_COMPLETED -> "завершил(а) раунд ревью #" + safeNumber(detailValue(entry, "roundNumber"));
+            case REVIEW_ROUND_CANCELED -> "отменил(а) раунд ревью #" + safeNumber(detailValue(entry, "roundNumber"));
         };
     }
 
@@ -207,6 +186,35 @@ public class TaskHistoryService {
 
     private String safeNumber(String value) {
         return value == null || value.isBlank() ? "?" : value;
+    }
+
+    private String attachmentChangeMessage(String oldVal, String newVal) {
+        if ((newVal == null || newVal.isBlank()) && oldVal != null && !oldVal.isBlank()) {
+            return isLinkHistoryValue(oldVal)
+                    ? "удалил(а) ссылку из задачи: " + safeName(stripHistoryPrefix(oldVal))
+                    : "удалил(а) файл из задачи: " + safeName(stripHistoryPrefix(oldVal));
+        }
+        if (newVal != null && !newVal.isBlank()) {
+            return isLinkHistoryValue(newVal)
+                    ? "добавил(а) ссылку к задаче: " + safeName(stripHistoryPrefix(newVal))
+                    : "прикрепил(а) файл к задаче: " + safeName(stripHistoryPrefix(newVal));
+        }
+        return "изменил(а) вложения задачи";
+    }
+
+    private String statusChangeMessage(String detailsJson) {
+        String oldStatusRaw = extractValue(detailsJson, "oldStatus");
+        String newStatusRaw = extractValue(detailsJson, "newStatus");
+        String newStatus = mapTaskStatus(newStatusRaw);
+        if (oldStatusRaw == null || oldStatusRaw.isBlank()) {
+            return "изменил(а) статус задачи на " + newStatus;
+        }
+        String oldStatus = mapTaskStatus(oldStatusRaw);
+        return "изменил(а) статус задачи: " + oldStatus + " -> " + newStatus;
+    }
+
+    private String detailValue(TaskHistory entry, String key) {
+        return extractValue(entry.getDetailsJson(), key);
     }
 
     private String extractValue(String json, String key) {

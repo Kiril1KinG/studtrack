@@ -1,4 +1,4 @@
-package ru.diploma.studtrack.controller;
+package ru.diploma.studtrack.controller.api;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/tasks/{taskId}/reviewers")
 @RequiredArgsConstructor
-public class TaskReviewerController {
+public class TaskReviewerApiController {
 
     private final TaskReviewerService taskReviewerService;
     private final TaskReviewerMapper taskReviewerMapper;
@@ -39,9 +39,9 @@ public class TaskReviewerController {
     }
 
     @GetMapping("/pending")
-    public ResponseEntity<List<TaskReviewerResponse>> getPendingReviews() {
-        log.info("Запрос на получение ожидающих ревью для текущего пользователя");
-        List<TaskReviewer> pending = taskReviewerService.getPendingReviewsForCurrentUser();
+    public ResponseEntity<List<TaskReviewerResponse>> getPendingReviews(@PathVariable UUID taskId) {
+        log.info("Запрос на получение ожидающих ревью для текущего пользователя по задаче id: {}", taskId);
+        List<TaskReviewer> pending = taskReviewerService.getPendingReviewsForCurrentUserByTask(taskId);
         log.debug("Найдено {} ожидающих ревью", pending.size());
         return ResponseEntity.ok(taskReviewerMapper.toResponseList(pending));
     }

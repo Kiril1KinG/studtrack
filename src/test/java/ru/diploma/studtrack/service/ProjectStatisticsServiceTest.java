@@ -57,7 +57,7 @@ class ProjectStatisticsServiceTest {
 
     @Test
     void doneOnlyDurationsAndOpenAgeMustBeCalculatedSeparately() {
-        User memberUser = User.builder().id(memberId).fullName("Student One").email("s1@test").build();
+        User memberUser = User.builder().id(memberId).lastName("One").firstName("Student").email("s1@test").build();
         Project project = Project.builder().id(projectId).name("P").build();
         ProjectMember member = ProjectMember.builder().project(project).user(memberUser).build();
 
@@ -118,7 +118,7 @@ class ProjectStatisticsServiceTest {
 
     @Test
     void cycleMustBeNullWhenNoInProgressEvent() {
-        User memberUser = User.builder().id(memberId).fullName("Student One").email("s1@test").build();
+        User memberUser = User.builder().id(memberId).lastName("One").firstName("Student").email("s1@test").build();
         Project project = Project.builder().id(projectId).name("P").build();
         ProjectMember member = ProjectMember.builder().project(project).user(memberUser).build();
 

@@ -42,6 +42,15 @@ public class TaskReviewerService {
                 .toList();
     }
 
+    public List<TaskReviewer> getPendingReviewsForCurrentUserByTask(UUID taskId) {
+        UUID currentUserId = userService.getCurrentUserId();
+        return taskReviewerRepository.findByTaskId(taskId).stream()
+                .filter(tr -> tr.getUser().getId().equals(currentUserId))
+                .filter(tr -> tr.getStatus() == TaskReviewer.ReviewStatus.PENDING)
+                .filter(tr -> tr.getTask().isReviewRequired())
+                .toList();
+    }
+
     @Transactional
     public TaskReviewer addReviewer(UUID taskId, UUID reviewerId) {
         Task task = taskService.findById(taskId);

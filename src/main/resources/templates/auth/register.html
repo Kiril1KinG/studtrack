@@ -5,10 +5,19 @@
         <div class="row justify-content-center">
             <div class="col-md-4">
                 <h2 class="mb-4">Регистрация</h2>
+                <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
                 <form method="post" th:action="@{/auth/register}">
                     <div class="mb-3">
-                        <label>Полное имя</label>
-                        <input type="text" name="fullName" class="form-control" required>
+                        <label>Фамилия</label>
+                        <input type="text" name="lastName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Имя</label>
+                        <input type="text" name="firstName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Отчество (при наличии)</label>
+                        <input type="text" name="patronymic" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label>Email</label>
@@ -16,14 +25,18 @@
                     </div>
                     <div class="mb-3">
                         <label>Пароль</label>
-                        <input type="password" name="password" class="form-control" required>
+                        <input type="password"
+                               name="password"
+                               class="form-control"
+                               minlength="8"
+                               pattern="(?=.*[A-Za-z])(?=.*\\d).{8,}"
+                               title="Минимум 8 символов, обязательно хотя бы одна буква и одна цифра"
+                               required>
+                        <div class="form-text">Минимум 8 символов, обязательно буквы и цифры.</div>
                     </div>
                     <div class="mb-3">
-                        <label>Роль</label>
-                        <select name="role" class="form-select">
-                            <option value="STUDENT">Студент</option>
-                            <option value="TEACHER">Преподаватель</option>
-                        </select>
+                        <label>Подтверждение пароля</label>
+                        <input type="password" name="confirmPassword" class="form-control" minlength="8" required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
                 </form>

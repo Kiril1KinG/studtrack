@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Slf4j
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "ru.diploma.studtrack.controller.api")
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)

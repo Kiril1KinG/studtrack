@@ -11,6 +11,7 @@ import ru.diploma.studtrack.model.User;
 import ru.diploma.studtrack.service.ProjectService;
 import ru.diploma.studtrack.service.TaskService;
 import ru.diploma.studtrack.service.UserService;
+import ru.diploma.studtrack.service.WebErrorMessageService;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,13 +24,11 @@ public class WebProfileController {
     private final UserService userService;
     private final ProjectService projectService;
     private final TaskService taskService;
+    private final WebErrorMessageService webErrorMessageService;
 
     @GetMapping
     public String viewProfile(Model model) {
         User currentUser = userService.getCurrentUser();
-        if (currentUser.getFullName() == null || currentUser.getFullName().isBlank()) {
-            currentUser.setFullName("User");
-        }
 
         List<Task> assignedTasks = taskService.getAssignedToMe().stream()
                 .filter(t -> t.getStatus() != Task.TaskStatus.DONE)
@@ -44,56 +43,75 @@ public class WebProfileController {
     }
 
     @PostMapping("/update")
-    public String updateProfile(@RequestParam String fullName,
+    public String updateProfile(@RequestParam String lastName,
+                                @RequestParam String firstName,
+                                @RequestParam(required = false) String patronymic,
                                 RedirectAttributes redirectAttributes) {
-        try {
-            User current = userService.getCurrentUser();
-            User updated = User.builder()
-                    .fullName(fullName)
-                    .build();
-            userService.update(current.getId(), updated);
-            redirectAttributes.addFlashAttribute("successMessage", "Профиль обновлён");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/profile";
+        return executeProfileAction(
+                redirectAttributes,
+                "Профиль обновлён",
+                () -> {
+                    User current = userService.getCurrentUser();
+                    User updated = User.builder()
+                            .lastName(lastName)
+                            .firstName(firstName)
+                            .patronymic(patronymic)
+                            .build();
+                    userService.update(current.getId(), updated);
+                }
+        );
     }
 
     @PostMapping("/change-password")
     public String changePassword(@RequestParam String oldPassword,
                                  @RequestParam String newPassword,
                                  RedirectAttributes redirectAttributes) {
-        try {
-            UUID currentUserId = userService.getCurrentUserId();
-            userService.changePassword(currentUserId, oldPassword, newPassword);
-            redirectAttributes.addFlashAttribute("successMessage", "Пароль изменён");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/profile";
+        return executeProfileAction(
+                redirectAttributes,
+                "Пароль изменён",
+                () -> {
+                    UUID currentUserId = userService.getCurrentUserId();
+                    userService.changePassword(currentUserId, oldPassword, newPassword);
+                }
+        );
     }
 
     @PostMapping("/avatar")
     public String updateAvatar(@RequestParam("avatar") MultipartFile avatar,
                                RedirectAttributes redirectAttributes) {
-        try {
-            UUID currentUserId = userService.getCurrentUserId();
-            userService.updateAvatar(currentUserId, avatar);
-            redirectAttributes.addFlashAttribute("successMessage", "Аватар обновлён");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/profile";
+        return executeProfileAction(
+                redirectAttributes,
+                "Аватар обновлён",
+                () -> {
+                    UUID currentUserId = userService.getCurrentUserId();
+                    userService.updateAvatar(currentUserId, avatar);
+                }
+        );
     }
 
     @PostMapping("/avatar/delete")
     public String deleteAvatar(RedirectAttributes redirectAttributes) {
+        return executeProfileAction(
+                redirectAttributes,
+                "Аватар удалён",
+                () -> {
+                    UUID currentUserId = userService.getCurrentUserId();
+                    userService.deleteAvatar(currentUserId);
+                }
+        );
+    }
+
+    private String executeProfileAction(RedirectAttributes redirectAttributes,
+                                        String successMessage,
+                                        Runnable action) {
         try {
-            UUID currentUserId = userService.getCurrentUserId();
-            userService.deleteAvatar(currentUserId);
-            redirectAttributes.addFlashAttribute("successMessage", "Аватар удалён");
+            action.run();
+            redirectAttributes.addFlashAttribute("successMessage", successMessage);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    webErrorMessageService.resolve(e, "Не удалось выполнить действие в профиле. Попробуйте еще раз.")
+            );
         }
         return "redirect:/profile";
     }

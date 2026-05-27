@@ -58,8 +58,10 @@ public interface TaskMapper {
         return UserResponse.builder()
                 .id(first.getUser().getId())
                 .email(first.getUser().getEmail())
+                .lastName(first.getUser().getLastName())
+                .firstName(first.getUser().getFirstName())
+                .patronymic(first.getUser().getPatronymic())
                 .fullName(first.getUser().getFullName())
-                .role(first.getUser().getRole())
                 .createdAt(first.getUser().getCreatedAt())
                 .build();
     }
@@ -73,8 +75,10 @@ public interface TaskMapper {
                 .map(user -> UserResponse.builder()
                         .id(user.getId())
                         .email(user.getEmail())
+                        .lastName(user.getLastName())
+                        .firstName(user.getFirstName())
+                        .patronymic(user.getPatronymic())
                         .fullName(user.getFullName())
-                        .role(user.getRole())
                         .createdAt(user.getCreatedAt())
                         .build())
                 .collect(Collectors.toList());

@@ -55,15 +55,25 @@ public class UserService {
     }
 
     @Transactional
-    public User register(String email, String password, String fullName, User.Role role) {
+    public User register(String email,
+                         String password,
+                         String lastName,
+                         String firstName,
+                         String patronymic) {
         if (existsByEmail(email)) {
             throw new AlreadyExistsException("Пользователь", "email", email);
         }
+        validatePasswordComplexity(password);
+        String normalizedLastName = normalizeNamePart(lastName, true, "Фамилия");
+        String normalizedFirstName = normalizeNamePart(firstName, true, "Имя");
+        String normalizedPatronymic = normalizeNamePart(patronymic, false, "Отчество");
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(password))
-                .fullName(fullName)
-                .role(role != null ? role : User.Role.STUDENT)
+                .lastName(normalizedLastName)
+                .firstName(normalizedFirstName)
+                .patronymic(normalizedPatronymic)
+                .fullName(buildFullName(normalizedLastName, normalizedFirstName, normalizedPatronymic))
                 .build();
         return userRepository.save(user);
     }
@@ -71,7 +81,13 @@ public class UserService {
     @Transactional
     public User update(UUID id, User updatedUser) {
         User existing = findById(id);
-        existing.setFullName(updatedUser.getFullName());
+        String normalizedLastName = normalizeNamePart(updatedUser.getLastName(), true, "Фамилия");
+        String normalizedFirstName = normalizeNamePart(updatedUser.getFirstName(), true, "Имя");
+        String normalizedPatronymic = normalizeNamePart(updatedUser.getPatronymic(), false, "Отчество");
+        existing.setLastName(normalizedLastName);
+        existing.setFirstName(normalizedFirstName);
+        existing.setPatronymic(normalizedPatronymic);
+        existing.setFullName(buildFullName(normalizedLastName, normalizedFirstName, normalizedPatronymic));
         return userRepository.save(existing);
     }
 
@@ -143,5 +159,42 @@ public class UserService {
             return "";
         }
         return fileName.substring(dot);
+    }
+
+    private String normalizeNamePart(String value, boolean required, String fieldLabel) {
+        String normalized = value == null ? "" : value.trim();
+        if (required && normalized.isBlank()) {
+            throw new IllegalArgumentException(fieldLabel + " обязательно для заполнения");
+        }
+        return normalized.isBlank() ? null : normalized;
+    }
+
+    private String buildFullName(String lastName, String firstName, String patronymic) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(lastName).append(" ").append(firstName);
+        if (patronymic != null && !patronymic.isBlank()) {
+            builder.append(" ").append(patronymic);
+        }
+        return builder.toString();
+    }
+
+    private void validatePasswordComplexity(String password) {
+        if (password == null || password.length() < 8) {
+            throw new IllegalArgumentException("Пароль должен быть не короче 8 символов и содержать буквы и цифры");
+        }
+        boolean hasLetter = false;
+        boolean hasDigit = false;
+        for (int i = 0; i < password.length(); i++) {
+            char ch = password.charAt(i);
+            if (Character.isLetter(ch)) {
+                hasLetter = true;
+            } else if (Character.isDigit(ch)) {
+                hasDigit = true;
+            }
+            if (hasLetter && hasDigit) {
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Пароль должен быть не короче 8 символов и содержать буквы и цифры");
     }
 }

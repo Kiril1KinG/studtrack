@@ -11,14 +11,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.view.RedirectView;
 import org.springframework.web.multipart.MultipartFile;
-import ru.diploma.studtrack.model.ArtifactType;
 import ru.diploma.studtrack.model.TaskAttachment;
 import ru.diploma.studtrack.model.Task;
+import ru.diploma.studtrack.service.AttachmentHistoryValueService;
 import ru.diploma.studtrack.service.ProjectService;
 import ru.diploma.studtrack.service.TaskAttachmentService;
 import ru.diploma.studtrack.service.TaskHistoryService;
 import ru.diploma.studtrack.service.TaskService;
 import ru.diploma.studtrack.service.UserService;
+import ru.diploma.studtrack.service.WebErrorMessageService;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,10 +34,12 @@ public class WebAttachmentController {
     private final TaskService taskService;
     private final ProjectService projectService;
     private final TaskHistoryService taskHistoryService;
+    private final AttachmentHistoryValueService attachmentHistoryValueService;
+    private final WebErrorMessageService webErrorMessageService;
 
     @GetMapping("/{taskId}/attachments")
     public String getAttachments(@PathVariable UUID taskId, Model model) {
-        Task task = taskService.findById(taskId);
+        Task task = getAccessibleTask(taskId);
         List<TaskAttachment> attachments = taskAttachmentService.getTaskArtifacts(taskId);
         UUID currentUserId = userService.getCurrentUserId();
         model.addAttribute("taskId", taskId);
@@ -50,21 +53,17 @@ public class WebAttachmentController {
     public String uploadAttachment(@PathVariable UUID taskId,
                                    @RequestParam("files") List<MultipartFile> files,
                                    Model model) {
-        if (files != null) {
+        executeAttachmentOperation(taskId, model, () -> {
+            if (files == null) {
+                return;
+            }
             for (MultipartFile file : files) {
                 if (file != null && !file.isEmpty()) {
                     TaskAttachment created = taskAttachmentService.addAttachment(taskId, file);
-                    Task task = created.getTask();
-                    taskHistoryService.recordFieldChange(
-                            task,
-                            userService.getCurrentUser(),
-                            "attachments",
-                            null,
-                            historyValueFor(created)
-                    );
+                    recordAttachmentAdded(created);
                 }
             }
-        }
+        });
         return getAttachments(taskId, model);
     }
 
@@ -73,14 +72,10 @@ public class WebAttachmentController {
                           @RequestParam String url,
                           @RequestParam(required = false) String title,
                           Model model) {
-        TaskAttachment created = taskAttachmentService.addLink(taskId, url, title);
-        taskHistoryService.recordFieldChange(
-                created.getTask(),
-                userService.getCurrentUser(),
-                "attachments",
-                null,
-                historyValueFor(created)
-        );
+        executeAttachmentOperation(taskId, model, () -> {
+            TaskAttachment created = taskAttachmentService.addLink(taskId, url, title);
+            recordAttachmentAdded(created);
+        });
         return getAttachments(taskId, model);
     }
 
@@ -105,28 +100,63 @@ public class WebAttachmentController {
     }
 
     private String deleteAndReload(UUID attachmentId, UUID taskId, Model model) {
-        TaskAttachment attachment = taskAttachmentService.findById(attachmentId);
-        if (taskId == null) {
-            taskId = attachment.getTask().getId();
+        try {
+            TaskAttachment attachment = taskAttachmentService.findById(attachmentId);
+            if (taskId == null) {
+                taskId = attachment.getTask().getId();
+            }
+            taskHistoryService.recordFieldChange(
+                    attachment.getTask(),
+                    userService.getCurrentUser(),
+                    "attachments",
+                    attachmentHistoryValueService.historyValueFor(attachment),
+                    null
+            );
+            taskAttachmentService.deleteAttachment(attachmentId);
+            return getAttachments(taskId, model);
+        } catch (Exception e) {
+            String message = webErrorMessageService.resolve(e, "Не удалось удалить вложение. Попробуйте еще раз.");
+            if (taskId != null) {
+                return getAttachmentsWithError(taskId, model, message);
+            }
+            model.addAttribute("attachmentErrorMessage", message);
+            return "fragments/task-attachments :: attachmentList";
         }
+    }
+
+    private Task getAccessibleTask(UUID taskId) {
+        Task task = taskService.findById(taskId);
+        projectService.checkMembership(task.getProject().getId());
+        return task;
+    }
+
+    private void executeAttachmentOperation(UUID taskId,
+                                            Model model,
+                                            Runnable action) {
+        try {
+            getAccessibleTask(taskId);
+            action.run();
+        } catch (Exception e) {
+            getAttachmentsWithError(
+                    taskId,
+                    model,
+                    webErrorMessageService.resolve(e, "Не удалось выполнить операцию с вложением. Попробуйте еще раз.")
+            );
+        }
+    }
+
+    private void recordAttachmentAdded(TaskAttachment attachment) {
         taskHistoryService.recordFieldChange(
                 attachment.getTask(),
                 userService.getCurrentUser(),
                 "attachments",
-                historyValueFor(attachment),
-                null
+                null,
+                attachmentHistoryValueService.historyValueFor(attachment)
         );
-        taskAttachmentService.deleteAttachment(attachmentId);
-        return getAttachments(taskId, model);
     }
 
-    private String historyValueFor(TaskAttachment attachment) {
-        if (attachment.getType() == ArtifactType.LINK) {
-            if (attachment.getLinkTitle() != null && !attachment.getLinkTitle().isBlank()) {
-                return "LINK::" + attachment.getLinkTitle();
-            }
-            return "LINK::" + attachment.getLinkUrl();
-        }
-        return "FILE::" + attachment.getOriginalName();
+    private String getAttachmentsWithError(UUID taskId, Model model, String errorMessage) {
+        model.addAttribute("attachmentErrorMessage", errorMessage);
+        return getAttachments(taskId, model);
     }
 }

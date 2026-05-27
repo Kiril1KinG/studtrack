@@ -43,6 +43,7 @@ public class WebTaskController {
     private final ChangeRequestService changeRequestService;
     private final TaskHistoryService taskHistoryService;
     private final TaskAttachmentService taskAttachmentService;
+    private final WebErrorMessageService webErrorMessageService;
 
     @GetMapping("/my")
     public String myTasks(@RequestParam(required = false) Task.Priority priority,
@@ -81,7 +82,7 @@ public class WebTaskController {
     public String createTask(@PathVariable UUID projectId,
                              @Valid @ModelAttribute TaskCreateRequest request,
                              Model model) {
-        projectService.checkMembership(projectId);
+        getAccessibleProject(projectId);
 
         taskService.create(
                 projectId,
@@ -92,18 +93,7 @@ public class WebTaskController {
                 request.getAssigneeId(),
                 request.getDeadline()
         );
-
-        List<Task> tasks = taskService.getTasksByProject(projectId);
-        Map<Task.TaskStatus, List<Task>> tasksByStatus = tasks.stream()
-                .collect(Collectors.groupingBy(Task::getStatus));
-        Map<UUID, String> reviewStateByTaskId = taskService.getReviewStateByTaskId(tasks);
-        Map<UUID, TaskService.ReviewStats> reviewStatsByTaskId = taskService.getReviewStatsByTaskId(tasks);
-
-        model.addAttribute("project", projectService.findById(projectId));
-        model.addAttribute("tasksByStatus", tasksByStatus);
-        model.addAttribute("reviewStateByTaskId", reviewStateByTaskId);
-        model.addAttribute("reviewStatsByTaskId", reviewStatsByTaskId);
-        model.addAttribute("statuses", Task.TaskStatus.values());
+        addKanbanBoardAttributes(model, projectId);
         model.addAttribute("priorities", Task.Priority.values());
 
         return "projects/fragments :: kanbanBoard";
@@ -111,9 +101,8 @@ public class WebTaskController {
 
     @GetMapping("/{id}")
     public String viewTask(@PathVariable UUID id, Model model) {
-        Task task = taskService.findById(id);
+        Task task = getAccessibleTask(id);
         UUID projectId = task.getProject().getId();
-        projectService.checkMembership(projectId);
 
         User currentUser = userService.getCurrentUser();
         boolean isOwner = projectService.isOwner(projectId, currentUser.getId());
@@ -163,8 +152,7 @@ public class WebTaskController {
 
     @GetMapping("/{id}/history")
     public String getTaskHistory(@PathVariable UUID id, Model model) {
-        Task task = taskService.findById(id);
-        projectService.checkMembership(task.getProject().getId());
+        Task task = getAccessibleTask(id);
 
         List<TaskHistory> historyEntries = taskHistoryService.getByTask(id);
         Map<UUID, String> historyMessageById = new LinkedHashMap<>();
@@ -179,9 +167,13 @@ public class WebTaskController {
     public String addAssignee(@PathVariable UUID taskId,
                               @RequestParam UUID assigneeId,
                               Model model) {
-        Task task = taskService.findById(taskId);
-        projectService.checkMembership(task.getProject().getId());
-        taskAssigneeService.addAssignee(taskId, assigneeId);
+        executeAssigneeAction(
+                taskId,
+                model,
+                () -> taskAssigneeService.addAssignee(taskId, assigneeId),
+                "добавления исполнителя",
+                "Не удалось добавить исполнителя. Попробуйте еще раз."
+        );
         fillAssigneeListModel(model, taskId);
         return "fragments/task-assignees :: assigneeList";
     }
@@ -190,9 +182,13 @@ public class WebTaskController {
     public String removeAssignee(@PathVariable UUID taskId,
                                  @PathVariable UUID assigneeId,
                                  Model model) {
-        Task task = taskService.findById(taskId);
-        projectService.checkMembership(task.getProject().getId());
-        taskAssigneeService.removeAssignee(taskId, assigneeId);
+        executeAssigneeAction(
+                taskId,
+                model,
+                () -> taskAssigneeService.removeAssignee(taskId, assigneeId),
+                "удаления исполнителя",
+                "Не удалось удалить исполнителя. Попробуйте еще раз."
+        );
         fillAssigneeListModel(model, taskId);
         return "fragments/task-assignees :: assigneeList";
     }
@@ -201,25 +197,24 @@ public class WebTaskController {
     public String assignTask(@PathVariable UUID id,
                              @RequestParam(required = false) UUID assigneeId,
                              RedirectAttributes redirectAttributes) {
-        try {
-            Task task = taskService.findById(id);
-            UUID projectId = task.getProject().getId();
-            projectService.checkMembership(projectId);
-
-            UUID currentUserId = userService.getCurrentUserId();
-            boolean isOwner = projectService.isOwner(projectId, currentUserId);
-            if (isOwner && assigneeId != null) {
-                taskAssigneeService.addAssignee(id, assigneeId);
-            } else if (!isOwner) {
-                taskAssigneeService.addAssignee(id, currentUserId);
-            } else {
-                redirectAttributes.addFlashAttribute("errorMessage", "Укажите исполнителя для назначения");
-            }
-        } catch (Exception e) {
-            log.warn("Ошибка назначения исполнителя для задачи {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/tasks/" + id;
+        return executeTaskAction(
+                id,
+                "назначения исполнителя",
+                redirectAttributes,
+                () -> {
+                    Task task = getAccessibleTask(id);
+                    UUID projectId = task.getProject().getId();
+                    UUID currentUserId = userService.getCurrentUserId();
+                    boolean isOwner = projectService.isOwner(projectId, currentUserId);
+                    if (isOwner && assigneeId != null) {
+                        taskAssigneeService.addAssignee(id, assigneeId);
+                    } else if (!isOwner) {
+                        taskAssigneeService.addAssignee(id, currentUserId);
+                    } else {
+                        redirectAttributes.addFlashAttribute("errorMessage", "Укажите исполнителя для назначения");
+                    }
+                }
+        );
     }
 
     @PostMapping("/{id}/status")
@@ -233,25 +228,15 @@ public class WebTaskController {
             UUID projectId = task.getProject().getId();
 
             if ("kanban".equals(returnTo)) {
-                Project project = projectService.findById(projectId);
-                List<Task> tasks = taskService.getTasksByProject(projectId);
-                Map<Task.TaskStatus, List<Task>> tasksByStatus = tasks.stream()
-                        .collect(Collectors.groupingBy(Task::getStatus));
-                Map<UUID, String> reviewStateByTaskId = taskService.getReviewStateByTaskId(tasks);
-                Map<UUID, TaskService.ReviewStats> reviewStatsByTaskId = taskService.getReviewStatsByTaskId(tasks);
-                model.addAttribute("project", project);
-                model.addAttribute("tasksByStatus", tasksByStatus);
-                model.addAttribute("reviewStateByTaskId", reviewStateByTaskId);
-                model.addAttribute("reviewStatsByTaskId", reviewStatsByTaskId);
-                model.addAttribute("statuses", Task.TaskStatus.values());
+                addKanbanBoardAttributes(model, projectId);
                 return "projects/fragments :: kanbanBoard";
             }
 
-            return "redirect:/tasks/" + id;
+            return redirectToTask(id);
         } catch (Exception e) {
             log.warn("Ошибка смены статуса задачи {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/tasks/" + id;
+            addRedirectError(redirectAttributes, e, "Не удалось изменить статус задачи. Попробуйте еще раз.");
+            return redirectToTask(id);
         }
     }
 
@@ -264,26 +249,24 @@ public class WebTaskController {
                              @RequestParam(required = false, defaultValue = "false") boolean reviewRequired,
                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate deadline,
                              RedirectAttributes redirectAttributes) {
-        try {
-            taskService.update(id, title, description, priority, assigneeId, reviewRequired, deadline);
-        } catch (Exception e) {
-            log.warn("Ошибка обновления задачи {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/tasks/" + id;
+        return executeTaskAction(
+                id,
+                "обновления",
+                redirectAttributes,
+                () -> taskService.update(id, title, description, priority, assigneeId, reviewRequired, deadline)
+        );
     }
 
     @PostMapping("/{taskId}/rounds/{roundId}/complete")
     public String completeReviewRound(@PathVariable UUID taskId,
                                       @PathVariable UUID roundId,
                                       RedirectAttributes redirectAttributes) {
-        try {
-            reviewRoundService.completeRound(roundId);
-        } catch (Exception e) {
-            log.warn("Ошибка завершения раунда {}: {}", roundId, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/tasks/" + taskId;
+        return executeTaskAction(
+                taskId,
+                "завершения раунда",
+                redirectAttributes,
+                () -> reviewRoundService.completeRound(roundId)
+        );
     }
 
     @PostMapping("/{taskId}/rounds")
@@ -293,15 +276,14 @@ public class WebTaskController {
         if (!reviewRoundService.canStartNewRound(taskId)) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Нельзя начать новый раунд: в предыдущем раунде есть незакрытые замечания.");
-            return "redirect:/tasks/" + taskId;
+            return redirectToTask(taskId);
         }
-        try {
-            reviewRoundService.createNewRound(taskId, summaryComment);
-        } catch (Exception e) {
-            log.warn("Ошибка создания раунда ревью для задачи {}: {}", taskId, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/tasks/" + taskId;
+        return executeTaskAction(
+                taskId,
+                "создания раунда ревью",
+                redirectAttributes,
+                () -> reviewRoundService.createNewRound(taskId, summaryComment)
+        );
     }
 
     @PostMapping("/{taskId}/rounds/{roundId}/change-requests")
@@ -309,64 +291,62 @@ public class WebTaskController {
                                    @PathVariable UUID roundId,
                                    @RequestParam String content,
                                    RedirectAttributes redirectAttributes) {
-        try {
-            changeRequestService.create(taskId, roundId, content);
-        } catch (Exception e) {
-            log.warn("Ошибка добавления замечания: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/tasks/" + taskId;
+        return executeTaskAction(
+                taskId,
+                "добавления замечания",
+                redirectAttributes,
+                () -> changeRequestService.create(taskId, roundId, content)
+        );
     }
 
     @PostMapping("/change-requests/{id}/resolve")
     public String resolveChangeRequest(@PathVariable UUID id,
                                        @RequestParam UUID taskId,
                                        RedirectAttributes redirectAttributes) {
-        try {
-            changeRequestService.markAsResolved(id);
-        } catch (Exception e) {
-            log.warn("Ошибка закрытия замечания {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/tasks/" + taskId;
+        return executeTaskAction(
+                taskId,
+                "закрытия замечания",
+                redirectAttributes,
+                () -> changeRequestService.markAsResolved(id)
+        );
     }
 
     @PostMapping("/change-requests/{id}/reopen")
     public String reopenChangeRequest(@PathVariable UUID id,
                                       @RequestParam UUID taskId,
                                       RedirectAttributes redirectAttributes) {
-        try {
-            changeRequestService.markAsOpen(id);
-        } catch (Exception e) {
-            log.warn("Ошибка переоткрытия замечания {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/tasks/" + taskId;
+        return executeTaskAction(
+                taskId,
+                "переоткрытия замечания",
+                redirectAttributes,
+                () -> changeRequestService.markAsOpen(id)
+        );
     }
 
     @PostMapping("/change-requests/{id}/reject")
     public String rejectChangeRequest(@PathVariable UUID id,
                                       @RequestParam UUID taskId,
                                       RedirectAttributes redirectAttributes) {
-        try {
-            changeRequestService.markAsRejected(id);
-        } catch (Exception e) {
-            log.warn("Ошибка отклонения замечания {}: {}", id, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return "redirect:/tasks/" + taskId;
+        return executeTaskAction(
+                taskId,
+                "отклонения замечания",
+                redirectAttributes,
+                () -> changeRequestService.markAsRejected(id)
+        );
     }
 
     @PostMapping("/{taskId}/reviewers")
     public String addReviewer(@PathVariable UUID taskId,
                               @RequestParam UUID reviewerId,
                               Model model) {
-        var task = taskService.findById(taskId);
-        projectService.checkMembership(task.getProject().getId());
-
-        taskReviewerService.addReviewer(taskId, reviewerId);
-
-        var reviewers = taskReviewerService.getReviewersByTask(taskId);
+        Task task = executeReviewerAction(
+                taskId,
+                model,
+                () -> taskReviewerService.addReviewer(taskId, reviewerId),
+                "добавления ревьюера",
+                "Не удалось добавить ревьюера. Попробуйте еще раз."
+        );
+        List<TaskReviewer> reviewers = taskReviewerService.getReviewersByTask(taskId);
         fillReviewerListModel(model, task, reviewers);
         return "fragments/task-reviewers :: reviewerList";
     }
@@ -375,12 +355,14 @@ public class WebTaskController {
     public String removeReviewer(@PathVariable UUID taskId,
                                  @PathVariable UUID reviewerId,
                                  Model model) {
-        var task = taskService.findById(taskId);
-        projectService.checkMembership(task.getProject().getId());
-
-        taskReviewerService.removeReviewer(taskId, reviewerId);
-
-        var reviewers = taskReviewerService.getReviewersByTask(taskId);
+        Task task = executeReviewerAction(
+                taskId,
+                model,
+                () -> taskReviewerService.removeReviewer(taskId, reviewerId),
+                "удаления ревьюера",
+                "Не удалось удалить ревьюера. Попробуйте еще раз."
+        );
+        List<TaskReviewer> reviewers = taskReviewerService.getReviewersByTask(taskId);
         fillReviewerListModel(model, task, reviewers);
         return "fragments/task-reviewers :: reviewerList";
     }
@@ -391,12 +373,14 @@ public class WebTaskController {
                                @RequestParam TaskReviewer.ReviewStatus status,
                                @RequestParam(required = false) String comment,
                                Model model) {
-        var task = taskService.findById(taskId);
-        projectService.checkMembership(task.getProject().getId());
-
-        taskReviewerService.submitReview(taskId, reviewerId, status, comment);
-
-        var reviewers = taskReviewerService.getReviewersByTask(taskId);
+        Task task = executeReviewerAction(
+                taskId,
+                model,
+                () -> taskReviewerService.submitReview(taskId, reviewerId, status, comment),
+                "отправки ревью",
+                "Не удалось отправить ревью. Попробуйте еще раз."
+        );
+        List<TaskReviewer> reviewers = taskReviewerService.getReviewersByTask(taskId);
         fillReviewerListModel(model, task, reviewers);
         return "fragments/task-reviewers :: reviewerList";
     }
@@ -413,12 +397,102 @@ public class WebTaskController {
     }
 
     private void fillAssigneeListModel(Model model, UUID taskId) {
-        Task task = taskService.findById(taskId);
+        Task task = getAccessibleTask(taskId);
         User currentUser = userService.getCurrentUser();
         model.addAttribute("taskId", taskId);
         model.addAttribute("assignees", taskAssigneeService.getAssigneesByTask(taskId));
         model.addAttribute("currentUserId", currentUser.getId());
         model.addAttribute("isOwner", projectService.isOwner(task.getProject().getId(), currentUser.getId()));
         model.addAttribute("isCurrentUserAssignee", taskAssigneeService.isAssignee(taskId, currentUser.getId()));
+    }
+
+    private Project getAccessibleProject(UUID projectId) {
+        Project project = projectService.findById(projectId);
+        projectService.checkMembership(projectId);
+        return project;
+    }
+
+    private Task getAccessibleTask(UUID taskId) {
+        Task task = taskService.findById(taskId);
+        projectService.checkMembership(task.getProject().getId());
+        return task;
+    }
+
+    private String executeTaskAction(UUID taskId,
+                                     String actionLabel,
+                                     RedirectAttributes redirectAttributes,
+                                     Runnable action) {
+        try {
+            action.run();
+        } catch (Exception e) {
+            log.warn("Ошибка {} для задачи {}: {}", actionLabel, taskId, e.getMessage());
+            addRedirectError(redirectAttributes, e, "Не удалось выполнить действие для задачи. Попробуйте еще раз.");
+        }
+        return redirectToTask(taskId);
+    }
+
+    private void executeAssigneeAction(UUID taskId,
+                                       Model model,
+                                       Runnable action,
+                                       String actionLabel,
+                                       String fallbackMessage) {
+        try {
+            getAccessibleTask(taskId);
+            action.run();
+        } catch (Exception e) {
+            log.warn("Ошибка {} в задаче {}: {}", actionLabel, taskId, e.getMessage());
+            model.addAttribute("assigneeErrorMessage", webErrorMessageService.resolve(e, fallbackMessage));
+        }
+    }
+
+    private Task executeReviewerAction(UUID taskId,
+                                       Model model,
+                                       Runnable action,
+                                       String actionLabel,
+                                       String fallbackMessage) {
+        Task task = getAccessibleTask(taskId);
+        try {
+            action.run();
+        } catch (Exception e) {
+            log.warn("Ошибка {} в задаче {}: {}", actionLabel, taskId, e.getMessage());
+            model.addAttribute("reviewerErrorMessage", webErrorMessageService.resolve(e, fallbackMessage));
+        }
+        return task;
+    }
+
+    private void addRedirectError(RedirectAttributes redirectAttributes,
+                                  Exception exception,
+                                  String fallbackMessage) {
+        redirectAttributes.addFlashAttribute("errorMessage", webErrorMessageService.resolve(exception, fallbackMessage));
+    }
+
+    private String redirectToTask(UUID taskId) {
+        return "redirect:/tasks/" + taskId;
+    }
+
+    private void addKanbanBoardAttributes(Model model, UUID projectId) {
+        Project project = getAccessibleProject(projectId);
+        List<Task> tasks = taskService.getTasksByProject(projectId);
+        KanbanModel kanbanModel = buildKanbanModel(tasks);
+        model.addAttribute("project", project);
+        model.addAttribute("tasksByStatus", kanbanModel.tasksByStatus());
+        model.addAttribute("reviewStateByTaskId", kanbanModel.reviewStateByTaskId());
+        model.addAttribute("reviewStatsByTaskId", kanbanModel.reviewStatsByTaskId());
+        model.addAttribute("statuses", Task.TaskStatus.values());
+    }
+
+    private KanbanModel buildKanbanModel(List<Task> tasks) {
+        Map<Task.TaskStatus, List<Task>> tasksByStatus = tasks.stream()
+                .collect(Collectors.groupingBy(Task::getStatus));
+        Map<UUID, String> reviewStateByTaskId = taskService.getReviewStateByTaskId(tasks);
+        Map<UUID, TaskService.ReviewStats> reviewStatsByTaskId = taskService.getReviewStatsByTaskId(tasks);
+        return new KanbanModel(tasksByStatus, reviewStateByTaskId, reviewStatsByTaskId);
+    }
+
+    private record KanbanModel(
+            Map<Task.TaskStatus, List<Task>> tasksByStatus,
+            Map<UUID, String> reviewStateByTaskId,
+            Map<UUID, TaskService.ReviewStats> reviewStatsByTaskId
+    ) {
     }
 }

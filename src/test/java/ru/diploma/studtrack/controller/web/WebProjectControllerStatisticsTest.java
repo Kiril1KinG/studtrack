@@ -15,10 +15,12 @@ import ru.diploma.studtrack.model.Task;
 import ru.diploma.studtrack.model.User;
 import ru.diploma.studtrack.service.ProjectService;
 import ru.diploma.studtrack.service.ProjectStatisticsService;
+import ru.diploma.studtrack.service.AttachmentHistoryValueService;
 import ru.diploma.studtrack.service.TaskAttachmentService;
 import ru.diploma.studtrack.service.TaskHistoryService;
 import ru.diploma.studtrack.service.TaskService;
 import ru.diploma.studtrack.service.UserService;
+import ru.diploma.studtrack.service.WebErrorMessageService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,6 +47,10 @@ class WebProjectControllerStatisticsTest {
     private TaskHistoryService taskHistoryService;
     @Mock
     private ProjectStatisticsService projectStatisticsService;
+    @Mock
+    private AttachmentHistoryValueService attachmentHistoryValueService;
+    @Mock
+    private WebErrorMessageService webErrorMessageService;
 
     private WebProjectController controller;
     private UUID projectId;
@@ -61,12 +67,14 @@ class WebProjectControllerStatisticsTest {
                 userService,
                 taskAttachmentService,
                 taskHistoryService,
-                projectStatisticsService
+                projectStatisticsService,
+                attachmentHistoryValueService,
+                webErrorMessageService
         );
 
         projectId = UUID.randomUUID();
         memberId = UUID.randomUUID();
-        currentUser = User.builder().id(UUID.randomUUID()).fullName("Owner").email("o@test").build();
+        currentUser = User.builder().id(UUID.randomUUID()).lastName("Owner").firstName("Test").email("o@test").build();
         project = Project.builder().id(projectId).name("Project").owner(currentUser).build();
         statistics = new ProjectStatisticsResponse(
                 ProjectStatisticsFilter.Period.DAYS_30,

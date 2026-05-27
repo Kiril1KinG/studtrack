@@ -1,4 +1,4 @@
-package ru.diploma.studtrack.controller;
+package ru.diploma.studtrack.controller.api;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/tasks/{taskId}/rounds")
 @RequiredArgsConstructor
-public class TaskReviewRoundController {
+public class TaskReviewRoundApiController {
 
     private final TaskReviewRoundService roundService;
     private final TaskReviewRoundMapper roundMapper;
@@ -52,7 +52,7 @@ public class TaskReviewRoundController {
     public ResponseEntity<TaskReviewRoundResponse> createRound(
             @PathVariable UUID taskId,
             @RequestBody(required = false) String summaryComment) {
-        log.info("Запрос на создание новой итерации ревью для задачи id: {}, comment={}", 
+        log.info("Запрос на создание новой итерации ревью для задачи id: {}, comment={}",
                 taskId, summaryComment);
         TaskReviewRound round = roundService.createNewRound(taskId, summaryComment);
         log.info("Итерация создана: №{}", round.getRoundNumber());
