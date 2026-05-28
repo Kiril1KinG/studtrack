@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
+import org.springframework.web.servlet.view.RedirectView;
 import org.springframework.web.multipart.MultipartFile;
 import ru.diploma.studtrack.model.Project;
 import ru.diploma.studtrack.model.Task;
@@ -123,6 +124,67 @@ class WebAttachmentControllerTest {
 
         assertEquals("fragments/task-attachments :: attachmentList", view);
         assertEquals("friendly", model.getAttribute("attachmentErrorMessage"));
+    }
+
+    @Test
+    void deleteAttachmentShouldResolveTaskIdFromAttachmentWhenNotProvided() {
+        Model model = new ExtendedModelMap();
+        UUID attachmentId = UUID.randomUUID();
+        TaskAttachment attachment = TaskAttachment.builder().id(attachmentId).task(task).build();
+        UUID currentUserId = UUID.randomUUID();
+        when(taskAttachmentService.findById(attachmentId)).thenReturn(attachment);
+        when(userService.getCurrentUser()).thenReturn(User.builder().id(UUID.randomUUID()).build());
+        when(attachmentHistoryValueService.historyValueFor(attachment)).thenReturn("FILE::a.txt");
+        when(taskService.findById(taskId)).thenReturn(task);
+        when(taskAttachmentService.getTaskArtifacts(taskId)).thenReturn(List.of());
+        when(userService.getCurrentUserId()).thenReturn(currentUserId);
+        when(projectService.isOwner(task.getProject().getId(), currentUserId)).thenReturn(false);
+
+        String view = controller.deleteAttachment(attachmentId, null, model);
+
+        assertEquals("fragments/task-attachments :: attachmentList", view);
+        verify(taskAttachmentService).deleteAttachment(attachmentId);
+    }
+
+    @Test
+    void deleteAttachmentShouldReturnErrorFragmentWhenTaskIdUnknown() {
+        Model model = new ExtendedModelMap();
+        UUID attachmentId = UUID.randomUUID();
+        when(taskAttachmentService.findById(attachmentId)).thenThrow(new IllegalArgumentException("bad"));
+        when(webErrorMessageService.resolve(any(), anyString())).thenReturn("friendly");
+
+        String view = controller.deleteAttachment(attachmentId, null, model);
+
+        assertEquals("fragments/task-attachments :: attachmentList", view);
+        assertEquals("friendly", model.getAttribute("attachmentErrorMessage"));
+    }
+
+    @Test
+    void deleteAttachmentPostFallbackShouldReturnListWithErrorWhenTaskIdProvided() {
+        Model model = new ExtendedModelMap();
+        UUID attachmentId = UUID.randomUUID();
+        UUID currentUserId = UUID.randomUUID();
+        when(taskAttachmentService.findById(attachmentId)).thenThrow(new IllegalArgumentException("bad"));
+        when(webErrorMessageService.resolve(any(), anyString())).thenReturn("friendly");
+        when(taskService.findById(taskId)).thenReturn(task);
+        when(taskAttachmentService.getTaskArtifacts(taskId)).thenReturn(List.of());
+        when(userService.getCurrentUserId()).thenReturn(currentUserId);
+        when(projectService.isOwner(task.getProject().getId(), currentUserId)).thenReturn(true);
+
+        String view = controller.deleteAttachmentPostFallback(attachmentId, taskId, model);
+
+        assertEquals("fragments/task-attachments :: attachmentList", view);
+        assertEquals("friendly", model.getAttribute("attachmentErrorMessage"));
+    }
+
+    @Test
+    void downloadAttachmentShouldReturnRedirectView() {
+        UUID attachmentId = UUID.randomUUID();
+        when(taskAttachmentService.getDownloadUrl(attachmentId)).thenReturn("https://example.com/dl");
+
+        RedirectView view = controller.downloadAttachment(attachmentId);
+
+        assertEquals("https://example.com/dl", view.getUrl());
     }
 }
 
