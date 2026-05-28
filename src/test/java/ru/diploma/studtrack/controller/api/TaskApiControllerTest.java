@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import ru.diploma.studtrack.dto.request.TaskCreateRequest;
 import ru.diploma.studtrack.dto.request.TaskStatusUpdateRequest;
+import ru.diploma.studtrack.dto.request.TaskUpdateRequest;
 import ru.diploma.studtrack.dto.response.TaskResponse;
 import ru.diploma.studtrack.mapper.TaskMapper;
 import ru.diploma.studtrack.model.Task;
@@ -81,6 +82,44 @@ class TaskApiControllerTest {
         var response = controller.deleteTask(taskId);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(taskService).delete(taskId);
+    }
+
+    @Test
+    void getMyTasksShouldReturnOk() {
+        UUID projectId = UUID.randomUUID();
+        when(taskService.getMyTasks(projectId)).thenReturn(List.of());
+        when(taskMapper.toResponseList(List.of())).thenReturn(List.of());
+        var response = controller.getMyTasks(projectId);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getTaskShouldReturnOk() {
+        UUID taskId = UUID.randomUUID();
+        Task task = Task.builder().id(taskId).title("One").build();
+        TaskResponse dto = TaskResponse.builder().id(taskId).title("One").build();
+        when(taskService.findById(taskId)).thenReturn(task);
+        when(taskMapper.toResponse(task)).thenReturn(dto);
+        var response = controller.getTask(taskId);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("One", response.getBody().getTitle());
+    }
+
+    @Test
+    void updateTaskShouldReturnOk() {
+        UUID taskId = UUID.randomUUID();
+        Task task = Task.builder().id(taskId).title("Updated").priority(Task.Priority.HIGH).build();
+        TaskResponse dto = TaskResponse.builder().id(taskId).title("Updated").build();
+        when(taskService.update(any(), any(), any(), any(), any(), any(Boolean.class), any())).thenReturn(task);
+        when(taskMapper.toResponse(task)).thenReturn(dto);
+        TaskUpdateRequest request = TaskUpdateRequest.builder()
+                .title("Updated")
+                .priority(Task.Priority.HIGH)
+                .reviewRequired(false)
+                .build();
+        var response = controller.updateTask(taskId, request);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Updated", response.getBody().getTitle());
     }
 }
 

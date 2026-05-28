@@ -11,6 +11,7 @@ import ru.diploma.studtrack.dto.response.ProjectResponse;
 import ru.diploma.studtrack.mapper.ProjectMapper;
 import ru.diploma.studtrack.mapper.ProjectMemberMapper;
 import ru.diploma.studtrack.model.Project;
+import ru.diploma.studtrack.model.ProjectMember;
 import ru.diploma.studtrack.service.ProjectService;
 
 import java.util.List;
@@ -69,6 +70,55 @@ class ProjectApiControllerTest {
         var response = controller.deleteProject(id);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(projectService).delete(id);
+    }
+
+    @Test
+    void getOwnedProjectsShouldReturnOk() {
+        when(projectService.getOwnedProjects()).thenReturn(List.of());
+        when(projectMapper.toResponseList(List.of())).thenReturn(List.of());
+        var response = controller.getOwnedProjects();
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getProjectShouldReturnOk() {
+        UUID id = UUID.randomUUID();
+        Project project = Project.builder().id(id).name("One").build();
+        ProjectResponse dto = ProjectResponse.builder().id(id).name("One").build();
+        when(projectService.findById(id)).thenReturn(project);
+        when(projectMapper.toResponse(project)).thenReturn(dto);
+        var response = controller.getProject(id);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("One", response.getBody().getName());
+    }
+
+    @Test
+    void getMembersShouldReturnOk() {
+        UUID projectId = UUID.randomUUID();
+        when(projectService.getMembers(projectId)).thenReturn(List.of());
+        when(projectMemberMapper.toResponseList(List.of())).thenReturn(List.of());
+        var response = controller.getMembers(projectId);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void addMemberShouldReturnCreated() {
+        UUID projectId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).build();
+        when(projectService.addMember(projectId, userId)).thenReturn(member);
+        when(projectMemberMapper.toResponse(member)).thenReturn(null);
+        var request = ru.diploma.studtrack.dto.request.AddMemberRequest.builder().userId(userId).build();
+        var response = controller.addMember(projectId, request);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+    }
+
+    @Test
+    void removeAndLeaveShouldReturnNoContent() {
+        UUID projectId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        assertEquals(HttpStatus.NO_CONTENT, controller.removeMember(projectId, userId).getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, controller.leaveProject(projectId).getStatusCode());
     }
 }
 

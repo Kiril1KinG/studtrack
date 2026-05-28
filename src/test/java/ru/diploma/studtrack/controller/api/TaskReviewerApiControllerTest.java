@@ -73,5 +73,14 @@ class TaskReviewerApiControllerTest {
         assertEquals(HttpStatus.NO_CONTENT, delete.getStatusCode());
         verify(service).removeReviewer(taskId, reviewerId);
     }
+
+    @Test
+    void getPendingReviewsShouldReturnOk() {
+        UUID taskId = UUID.randomUUID();
+        when(service.getPendingReviewsForCurrentUserByTask(taskId)).thenReturn(List.of());
+        when(mapper.toResponseList(List.of())).thenReturn(List.of());
+        var response = controller.getPendingReviews(taskId);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
 }
 

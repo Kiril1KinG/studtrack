@@ -72,5 +72,17 @@ class CommentApiControllerTest {
         assertEquals(HttpStatus.NO_CONTENT, delete.getStatusCode());
         verify(commentService).delete(commentId);
     }
+
+    @Test
+    void addRoundCommentShouldReturnCreated() {
+        UUID taskId = UUID.randomUUID();
+        UUID roundId = UUID.randomUUID();
+        Comment comment = Comment.builder().id(UUID.randomUUID()).content("c").build();
+        CommentResponse dto = CommentResponse.builder().id(comment.getId()).content("c").build();
+        when(commentService.addCommentToRound(taskId, roundId, "c")).thenReturn(comment);
+        when(commentMapper.toResponse(comment)).thenReturn(dto);
+        var response = controller.addRoundComment(taskId, roundId, CommentCreateRequest.builder().content("c").build());
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+    }
 }
 

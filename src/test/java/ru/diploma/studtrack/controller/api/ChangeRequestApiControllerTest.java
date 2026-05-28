@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import ru.diploma.studtrack.dto.request.ChangeRequestCreateRequest;
+import ru.diploma.studtrack.dto.request.ChangeRequestUpdateRequest;
 import ru.diploma.studtrack.dto.response.ChangeRequestResponse;
 import ru.diploma.studtrack.mapper.ChangeRequestMapper;
 import ru.diploma.studtrack.model.ChangeRequest;
@@ -62,6 +63,30 @@ class ChangeRequestApiControllerTest {
         var response = controller.delete(id);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(service).delete(id);
+    }
+
+    @Test
+    void getByRoundAndOpenByRoundShouldReturnOk() {
+        UUID roundId = UUID.randomUUID();
+        when(service.getByRound(roundId)).thenReturn(List.of());
+        when(service.getOpenByRound(roundId)).thenReturn(List.of());
+        when(mapper.toResponseList(List.of())).thenReturn(List.of());
+        assertEquals(HttpStatus.OK, controller.getByRound(roundId).getStatusCode());
+        assertEquals(HttpStatus.OK, controller.getOpenByRound(roundId).getStatusCode());
+    }
+
+    @Test
+    void updateResolveAndReopenShouldReturnOk() {
+        UUID id = UUID.randomUUID();
+        ChangeRequest cr = ChangeRequest.builder().id(id).build();
+        ChangeRequestResponse dto = ChangeRequestResponse.builder().id(id).build();
+        when(service.updateContent(id, "upd")).thenReturn(cr);
+        when(service.markAsResolved(id)).thenReturn(cr);
+        when(service.markAsOpen(id)).thenReturn(cr);
+        when(mapper.toResponse(cr)).thenReturn(dto);
+        assertEquals(HttpStatus.OK, controller.update(id, ChangeRequestUpdateRequest.builder().content("upd").build()).getStatusCode());
+        assertEquals(HttpStatus.OK, controller.markAsResolved(id).getStatusCode());
+        assertEquals(HttpStatus.OK, controller.markAsOpen(id).getStatusCode());
     }
 }
 

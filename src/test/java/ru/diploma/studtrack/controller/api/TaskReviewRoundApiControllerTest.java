@@ -59,5 +59,16 @@ class TaskReviewRoundApiControllerTest {
         var response = controller.createRound(taskId, "sum");
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
     }
+
+    @Test
+    void updateSummaryShouldReturnOk() {
+        UUID roundId = UUID.randomUUID();
+        TaskReviewRound round = TaskReviewRound.builder().id(roundId).roundNumber(2).build();
+        TaskReviewRoundResponse dto = TaskReviewRoundResponse.builder().id(roundId).roundNumber(2).build();
+        when(service.updateSummary(roundId, "u")).thenReturn(round);
+        when(mapper.toResponse(round)).thenReturn(dto);
+        var response = controller.updateSummary(roundId, "u");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
 }
 

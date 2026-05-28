@@ -69,5 +69,37 @@ class AttachmentApiControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("url", response.getBody());
     }
+
+    @Test
+    void uploadAndAddLinkShouldReturnOk() {
+        UUID taskId = UUID.randomUUID();
+        org.springframework.web.multipart.MultipartFile file = org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class);
+        when(file.isEmpty()).thenReturn(false);
+        TaskAttachment createdFile = TaskAttachment.builder()
+                .id(UUID.randomUUID())
+                .task(Task.builder().id(taskId).build())
+                .uploadedBy(User.builder().id(UUID.randomUUID()).lastName("A").firstName("B").build())
+                .originalName("f.txt")
+                .uploadedAt(LocalDateTime.now())
+                .type(ArtifactType.FILE)
+                .build();
+        when(taskAttachmentService.addAttachment(taskId, file)).thenReturn(createdFile);
+
+        var uploadResponse = controller.upload(taskId, java.util.Arrays.asList(file, null));
+        assertEquals(HttpStatus.OK, uploadResponse.getStatusCode());
+        assertEquals(1, uploadResponse.getBody().size());
+
+        TaskAttachment link = TaskAttachment.builder()
+                .id(UUID.randomUUID())
+                .task(Task.builder().id(taskId).build())
+                .uploadedBy(User.builder().id(UUID.randomUUID()).lastName("A").firstName("B").build())
+                .originalName("L")
+                .type(ArtifactType.LINK)
+                .uploadedAt(LocalDateTime.now())
+                .build();
+        when(taskAttachmentService.addLink(taskId, "https://x", "L")).thenReturn(link);
+        var linkResponse = controller.addLink(taskId, "https://x", "L");
+        assertEquals(HttpStatus.OK, linkResponse.getStatusCode());
+    }
 }
 
