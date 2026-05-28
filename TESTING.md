@@ -31,6 +31,7 @@
 
 ## Примечания
 
+- Для тестов добавлен отдельный профиль `test` (файл `src/test/resources/application-test.properties`), он подключается явно через `@ActiveProfiles("test")` в интеграционных тестах.
 - `StudtrackApplicationTests` в этой ветке отключен намеренно, так как требует внешнее окружение БД/Liquibase и делает локальный unit-пайплайн нестабильным.
 - Coverage gate сейчас ограничен ключевыми целевыми пакетами:
   - `ru.diploma.studtrack.service`
