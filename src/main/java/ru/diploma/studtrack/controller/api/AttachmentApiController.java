@@ -17,13 +17,25 @@ import ru.diploma.studtrack.service.TaskAttachmentService;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Предоставляет REST-эндпоинты для управления вложениями и ссылками задачи.
+ */
 @RestController
 @RequestMapping("/api/tasks")
 @RequiredArgsConstructor
 public class AttachmentApiController {
 
+    /**
+     * Выполняет бизнес-операции с файловыми вложениями и ссылками задачи.
+     */
     private final TaskAttachmentService taskAttachmentService;
 
+    /**
+     * Возвращает все артефакты, прикреплённые к задаче.
+     *
+     * @param taskId идентификатор задачи
+     * @return список вложений и ссылок задачи
+     */
     @GetMapping("/{taskId}/attachments")
     public ResponseEntity<List<AttachmentResponse>> getAttachments(@PathVariable UUID taskId) {
         List<AttachmentResponse> response = taskAttachmentService.getTaskArtifacts(taskId).stream()
@@ -32,6 +44,13 @@ public class AttachmentApiController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Загружает файлы и прикрепляет их к задаче.
+     *
+     * @param taskId идентификатор задачи
+     * @param files загруженные файлы
+     * @return список созданных вложений
+     */
     @PostMapping("/{taskId}/attachments")
     public ResponseEntity<List<AttachmentResponse>> upload(@PathVariable UUID taskId,
                                                            @RequestParam("files") List<MultipartFile> files) {
@@ -42,6 +61,14 @@ public class AttachmentApiController {
         return ResponseEntity.ok(created);
     }
 
+    /**
+     * Добавляет внешнюю ссылку как артефакт задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @param url целевой URL
+     * @param title необязательный заголовок ссылки
+     * @return созданная ссылка
+     */
     @PostMapping("/{taskId}/links")
     public ResponseEntity<AttachmentResponse> addLink(@PathVariable UUID taskId,
                                                       @RequestParam("url") String url,
@@ -50,17 +77,35 @@ public class AttachmentApiController {
         return ResponseEntity.ok(toResponse(created));
     }
 
+    /**
+     * Удаляет вложение или ссылку по идентификатору.
+     *
+     * @param attachmentId идентификатор вложения
+     * @return пустой ответ со статусом 204
+     */
     @DeleteMapping("/attachments/{attachmentId}")
     public ResponseEntity<Void> delete(@PathVariable UUID attachmentId) {
         taskAttachmentService.deleteAttachment(attachmentId);
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Генерирует временный URL для скачивания вложения.
+     *
+     * @param attachmentId идентификатор вложения
+     * @return временный URL для скачивания
+     */
     @GetMapping("/attachments/{attachmentId}/url")
     public ResponseEntity<String> getDownloadUrl(@PathVariable UUID attachmentId) {
         return ResponseEntity.ok(taskAttachmentService.getDownloadUrl(attachmentId));
     }
 
+    /**
+     * Преобразует доменную модель вложения в API-ответ.
+     *
+     * @param attachment сущность вложения задачи
+     * @return сериализованный ответ вложения
+     */
     private AttachmentResponse toResponse(TaskAttachment attachment) {
         return AttachmentResponse.builder()
                 .id(attachment.getId())

@@ -28,15 +28,32 @@ import java.util.List;
 import java.util.UUID;
 
 @Slf4j
+/**
+ * Предоставляет REST-эндпоинты для управления проектами и их участниками.
+ */
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
 public class ProjectApiController {
 
+    /**
+     * Выполняет бизнес-логику проектов.
+     */
     private final ProjectService projectService;
+    /**
+     * Преобразует сущности проектов в DTO-ответы API.
+     */
     private final ProjectMapper projectMapper;
+    /**
+     * Преобразует сущности участников проекта в DTO-ответы API.
+     */
     private final ProjectMemberMapper projectMemberMapper;
 
+    /**
+     * Возвращает все проекты, доступные текущему пользователю.
+     *
+     * @return список проектов
+     */
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getMyProjects() {
         log.info("Запрос на получение проектов текущего пользователя");
@@ -45,6 +62,11 @@ public class ProjectApiController {
         return ResponseEntity.ok(projectMapper.toResponseList(projects));
     }
 
+    /**
+     * Возвращает проекты, владельцем которых является текущий пользователь.
+     *
+     * @return список проектов владельца
+     */
     @GetMapping("/owned")
     public ResponseEntity<List<ProjectResponse>> getOwnedProjects() {
         log.info("Запрос на получение проектов, где пользователь владелец");
@@ -53,6 +75,12 @@ public class ProjectApiController {
         return ResponseEntity.ok(projectMapper.toResponseList(projects));
     }
 
+    /**
+     * Возвращает данные проекта по идентификатору.
+     *
+     * @param id идентификатор проекта
+     * @return данные проекта
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ProjectResponse> getProject(@PathVariable UUID id) {
         log.info("Запрос на получение проекта с id: {}", id);
@@ -61,6 +89,12 @@ public class ProjectApiController {
         return ResponseEntity.ok(projectMapper.toResponse(project));
     }
 
+    /**
+     * Создаёт новый проект.
+     *
+     * @param request данные создания проекта
+     * @return созданный проект
+     */
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody ProjectCreateRequest request) {
         log.info("Запрос на создание проекта: name='{}', description='{}'",
@@ -70,6 +104,13 @@ public class ProjectApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(projectMapper.toResponse(project));
     }
 
+    /**
+     * Обновляет название и описание проекта.
+     *
+     * @param id идентификатор проекта
+     * @param request данные обновления проекта
+     * @return обновлённый проект
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ProjectResponse> updateProject(
             @PathVariable UUID id,
@@ -81,6 +122,12 @@ public class ProjectApiController {
         return ResponseEntity.ok(projectMapper.toResponse(project));
     }
 
+    /**
+     * Удаляет проект по идентификатору.
+     *
+     * @param id идентификатор проекта
+     * @return пустой ответ со статусом 204
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(@PathVariable UUID id) {
         log.info("Запрос на удаление проекта id: {}", id);
@@ -89,6 +136,12 @@ public class ProjectApiController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Возвращает всех участников проекта.
+     *
+     * @param projectId идентификатор проекта
+     * @return список участников
+     */
     @GetMapping("/{projectId}/members")
     public ResponseEntity<List<ProjectMemberResponse>> getMembers(@PathVariable UUID projectId) {
         log.info("Запрос на получение участников проекта id: {}", projectId);
@@ -97,6 +150,13 @@ public class ProjectApiController {
         return ResponseEntity.ok(projectMemberMapper.toResponseList(members));
     }
 
+    /**
+     * Добавляет участника в проект.
+     *
+     * @param projectId идентификатор проекта
+     * @param request данные участника
+     * @return созданная запись участника проекта
+     */
     @PostMapping("/{projectId}/members")
     public ResponseEntity<ProjectMemberResponse> addMember(
             @PathVariable UUID projectId,
@@ -108,6 +168,13 @@ public class ProjectApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(projectMemberMapper.toResponse(member));
     }
 
+    /**
+     * Удаляет участника из проекта.
+     *
+     * @param projectId идентификатор проекта
+     * @param userId идентификатор пользователя
+     * @return пустой ответ со статусом 204
+     */
     @DeleteMapping("/{projectId}/members/{userId}")
     public ResponseEntity<Void> removeMember(
             @PathVariable UUID projectId,
@@ -118,6 +185,12 @@ public class ProjectApiController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Удаляет текущего пользователя из участников проекта.
+     *
+     * @param projectId идентификатор проекта
+     * @return пустой ответ со статусом 204
+     */
     @PostMapping("/{projectId}/leave")
     public ResponseEntity<Void> leaveProject(@PathVariable UUID projectId) {
         log.info("Запрос на выход из проекта {}", projectId);

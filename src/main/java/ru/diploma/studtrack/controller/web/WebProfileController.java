@@ -16,16 +16,37 @@ import ru.diploma.studtrack.service.WebErrorMessageService;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Обрабатывает веб-страницы профиля пользователя.
+ */
 @Controller
 @RequestMapping("/profile")
 @RequiredArgsConstructor
 public class WebProfileController {
 
+    /**
+     * Предоставляет операции управления пользователем и профилем.
+     */
     private final UserService userService;
+    /**
+     * Предоставляет операции с проектами пользователя.
+     */
     private final ProjectService projectService;
+    /**
+     * Предоставляет операции с задачами пользователя.
+     */
     private final TaskService taskService;
+    /**
+     * Преобразует исключения в пользовательские сообщения для UI.
+     */
     private final WebErrorMessageService webErrorMessageService;
 
+    /**
+     * Отображает страницу профиля текущего пользователя.
+     *
+     * @param model модель представления
+     * @return имя шаблона страницы профиля
+     */
     @GetMapping
     public String viewProfile(Model model) {
         User currentUser = userService.getCurrentUser();
@@ -42,6 +63,15 @@ public class WebProfileController {
         return "profile/view";
     }
 
+    /**
+     * Обновляет ФИО пользователя.
+     *
+     * @param lastName фамилия
+     * @param firstName имя
+     * @param patronymic отчество
+     * @param redirectAttributes атрибуты flash-сообщений
+     * @return URL перенаправления на страницу профиля
+     */
     @PostMapping("/update")
     public String updateProfile(@RequestParam String lastName,
                                 @RequestParam String firstName,
@@ -62,6 +92,14 @@ public class WebProfileController {
         );
     }
 
+    /**
+     * Изменяет пароль текущего пользователя.
+     *
+     * @param oldPassword текущий пароль
+     * @param newPassword новый пароль
+     * @param redirectAttributes атрибуты flash-сообщений
+     * @return URL перенаправления на страницу профиля
+     */
     @PostMapping("/change-password")
     public String changePassword(@RequestParam String oldPassword,
                                  @RequestParam String newPassword,
@@ -76,6 +114,13 @@ public class WebProfileController {
         );
     }
 
+    /**
+     * Обновляет аватар текущего пользователя.
+     *
+     * @param avatar загруженный файл аватара
+     * @param redirectAttributes атрибуты flash-сообщений
+     * @return URL перенаправления на страницу профиля
+     */
     @PostMapping("/avatar")
     public String updateAvatar(@RequestParam("avatar") MultipartFile avatar,
                                RedirectAttributes redirectAttributes) {
@@ -89,6 +134,12 @@ public class WebProfileController {
         );
     }
 
+    /**
+     * Удаляет аватар текущего пользователя.
+     *
+     * @param redirectAttributes атрибуты flash-сообщений
+     * @return URL перенаправления на страницу профиля
+     */
     @PostMapping("/avatar/delete")
     public String deleteAvatar(RedirectAttributes redirectAttributes) {
         return executeProfileAction(
@@ -101,6 +152,14 @@ public class WebProfileController {
         );
     }
 
+    /**
+     * Выполняет действие профиля с единым шаблоном обработки ошибок.
+     *
+     * @param redirectAttributes атрибуты flash-сообщений
+     * @param successMessage сообщение об успехе
+     * @param action выполняемое действие
+     * @return URL перенаправления на страницу профиля
+     */
     private String executeProfileAction(RedirectAttributes redirectAttributes,
                                         String successMessage,
                                         Runnable action) {

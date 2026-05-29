@@ -25,14 +25,29 @@ import java.util.List;
 import java.util.UUID;
 
 @Slf4j
+/**
+ * Предоставляет REST-эндпоинты для замечаний по задаче.
+ */
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class ChangeRequestApiController {
 
+    /**
+     * Выполняет бизнес-логику замечаний.
+     */
     private final ChangeRequestService changeRequestService;
+    /**
+     * Преобразует сущности замечаний в DTO-ответы API.
+     */
     private final ChangeRequestMapper changeRequestMapper;
 
+    /**
+     * Возвращает все замечания по задаче.
+     *
+     * @param taskId идентификатор задачи
+     * @return список замечаний
+     */
     @GetMapping("/tasks/{taskId}/change-requests")
     public ResponseEntity<List<ChangeRequestResponse>> getByTask(@PathVariable UUID taskId) {
         log.info("Запрос на получение замечаний задачи id: {}", taskId);
@@ -41,6 +56,12 @@ public class ChangeRequestApiController {
         return ResponseEntity.ok(changeRequestMapper.toResponseList(requests));
     }
 
+    /**
+     * Возвращает все замечания по раунду ревью.
+     *
+     * @param roundId идентификатор раунда ревью
+     * @return список замечаний
+     */
     @GetMapping("/rounds/{roundId}/change-requests")
     public ResponseEntity<List<ChangeRequestResponse>> getByRound(@PathVariable UUID roundId) {
         log.info("Запрос на получение замечаний итерации id: {}", roundId);
@@ -49,6 +70,12 @@ public class ChangeRequestApiController {
         return ResponseEntity.ok(changeRequestMapper.toResponseList(requests));
     }
 
+    /**
+     * Возвращает только открытые замечания по раунду ревью.
+     *
+     * @param roundId идентификатор раунда ревью
+     * @return список открытых замечаний
+     */
     @GetMapping("/rounds/{roundId}/change-requests/open")
     public ResponseEntity<List<ChangeRequestResponse>> getOpenByRound(@PathVariable UUID roundId) {
         log.info("Запрос на получение открытых замечаний итерации id: {}", roundId);
@@ -57,6 +84,14 @@ public class ChangeRequestApiController {
         return ResponseEntity.ok(changeRequestMapper.toResponseList(requests));
     }
 
+    /**
+     * Создаёт новое замечание в выбранном раунде ревью.
+     *
+     * @param taskId идентификатор задачи
+     * @param roundId идентификатор раунда ревью
+     * @param request данные замечания
+     * @return созданное замечание
+     */
     @PostMapping("/tasks/{taskId}/rounds/{roundId}/change-requests")
     public ResponseEntity<ChangeRequestResponse> create(
             @PathVariable UUID taskId,
@@ -69,6 +104,13 @@ public class ChangeRequestApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(changeRequestMapper.toResponse(changeRequest));
     }
 
+    /**
+     * Обновляет текст существующего замечания.
+     *
+     * @param id идентификатор замечания
+     * @param request данные обновления
+     * @return обновлённое замечание
+     */
     @PutMapping("/change-requests/{id}")
     public ResponseEntity<ChangeRequestResponse> update(
             @PathVariable UUID id,
@@ -79,6 +121,12 @@ public class ChangeRequestApiController {
         return ResponseEntity.ok(changeRequestMapper.toResponse(changeRequest));
     }
 
+    /**
+     * Отмечает замечание как исправленное.
+     *
+     * @param id идентификатор замечания
+     * @return обновлённое замечание
+     */
     @PatchMapping("/change-requests/{id}/resolve")
     public ResponseEntity<ChangeRequestResponse> markAsResolved(@PathVariable UUID id) {
         log.info("Запрос на отметку замечания id: {} как исправленного", id);
@@ -87,6 +135,12 @@ public class ChangeRequestApiController {
         return ResponseEntity.ok(changeRequestMapper.toResponse(changeRequest));
     }
 
+    /**
+     * Переоткрывает ранее исправленное замечание.
+     *
+     * @param id идентификатор замечания
+     * @return обновлённое замечание
+     */
     @PatchMapping("/change-requests/{id}/reopen")
     public ResponseEntity<ChangeRequestResponse> markAsOpen(@PathVariable UUID id) {
         log.info("Запрос на переоткрытие замечания id: {}", id);
@@ -95,6 +149,12 @@ public class ChangeRequestApiController {
         return ResponseEntity.ok(changeRequestMapper.toResponse(changeRequest));
     }
 
+    /**
+     * Удаляет замечание по идентификатору.
+     *
+     * @param id идентификатор замечания
+     * @return пустой ответ со статусом 204
+     */
     @DeleteMapping("/change-requests/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         log.info("Запрос на удаление замечания id: {}", id);
