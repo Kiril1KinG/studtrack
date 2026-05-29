@@ -30,15 +30,40 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+/**
+ * Управляет вложениями и ссылками задач, включая загрузку в MinIO.
+ */
 public class TaskAttachmentService {
 
+    /**
+     * Репозиторий вложений задач.
+     */
     private final TaskAttachmentRepository taskAttachmentRepository;
+    /**
+     * Сервис задач.
+     */
     private final TaskService taskService;
+    /**
+     * Сервис пользователей.
+     */
     private final UserService userService;
+    /**
+     * Сервис проверки доступа к проекту.
+     */
     private final ProjectService projectService;
+    /**
+     * Сервис работы с файловым хранилищем MinIO.
+     */
     private final MinioStorageService minioStorageService;
 
     @Transactional
+    /**
+     * Загружает файл и создаёт вложение задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @param file файл для загрузки
+     * @return созданное вложение
+     */
     public TaskAttachment addAttachment(UUID taskId, MultipartFile file) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
@@ -75,6 +100,14 @@ public class TaskAttachmentService {
     }
 
     @Transactional
+    /**
+     * Добавляет ссылку как артефакт задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @param url URL ссылки
+     * @param title заголовок ссылки
+     * @return созданное вложение типа LINK
+     */
     public TaskAttachment addLink(UUID taskId, String url, String title) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
@@ -99,22 +132,47 @@ public class TaskAttachmentService {
         return taskAttachmentRepository.save(link);
     }
 
+    /**
+     * Возвращает файловые вложения задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @return список файловых вложений
+     */
     public List<TaskAttachment> getAttachments(UUID taskId) {
         return getFileAttachments(taskId);
     }
 
+    /**
+     * Возвращает только файловые вложения задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @return список файловых вложений
+     */
     public List<TaskAttachment> getFileAttachments(UUID taskId) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
         return taskAttachmentRepository.findByTaskIdAndCommentIsNullAndTypeOrderByUploadedAtDesc(taskId, ArtifactType.FILE);
     }
 
+    /**
+     * Возвращает все артефакты задачи (файлы и ссылки), исключая вложения комментариев.
+     *
+     * @param taskId идентификатор задачи
+     * @return список артефактов
+     */
     public List<TaskAttachment> getTaskArtifacts(UUID taskId) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
         return taskAttachmentRepository.findByTaskIdAndCommentIsNullOrderByUploadedAtDesc(taskId);
     }
 
+    /**
+     * Возвращает артефакты проекта с сортировкой для вкладки репозитория.
+     *
+     * @param projectId идентификатор проекта
+     * @param sortKey ключ сортировки
+     * @return список артефактов проекта
+     */
     public List<TaskAttachment> getProjectArtifacts(UUID projectId, String sortKey) {
         projectService.checkMembership(projectId);
         Sort sort = switch ((sortKey == null ? "" : sortKey.toLowerCase(Locale.ROOT))) {
@@ -127,12 +185,26 @@ public class TaskAttachmentService {
         return taskAttachmentRepository.findByTaskProjectIdAndCommentIsNull(projectId, sort);
     }
 
+    /**
+     * Возвращает вложение по идентификатору.
+     *
+     * @param attachmentId идентификатор вложения
+     * @return найденное вложение
+     */
     public TaskAttachment findById(UUID attachmentId) {
         return taskAttachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new NotFoundException("Вложение", attachmentId));
     }
 
     @Transactional
+    /**
+     * Привязывает загруженные файлы задачи к комментарию.
+     *
+     * @param taskId идентификатор задачи
+     * @param comment комментарий
+     * @param attachmentIds идентификаторы вложений
+     * @return список привязанных вложений
+     */
     public List<TaskAttachment> attachToComment(UUID taskId, Comment comment, List<UUID> attachmentIds) {
         if (attachmentIds == null || attachmentIds.isEmpty()) {
             return Collections.emptyList();
@@ -168,6 +240,11 @@ public class TaskAttachmentService {
     }
 
     @Transactional
+    /**
+     * Удаляет вложение или ссылку с проверкой прав доступа.
+     *
+     * @param attachmentId идентификатор вложения
+     */
     public void deleteAttachment(UUID attachmentId) {
         TaskAttachment attachment = findById(attachmentId);
         Task task = attachment.getTask();
@@ -189,6 +266,12 @@ public class TaskAttachmentService {
     }
 
     @Transactional
+    /**
+     * Удаляет выбранные вложения комментария.
+     *
+     * @param comment комментарий
+     * @param attachmentIds идентификаторы вложений для удаления
+     */
     public void deleteCommentAttachments(Comment comment, List<UUID> attachmentIds) {
         if (comment == null || attachmentIds == null || attachmentIds.isEmpty()) {
             return;
@@ -215,18 +298,36 @@ public class TaskAttachmentService {
         }
     }
 
+    /**
+     * Генерирует временный URL для скачивания файла-вложения.
+     *
+     * @param attachmentId идентификатор вложения
+     * @return временный URL
+     */
     public String getDownloadUrl(UUID attachmentId) {
         TaskAttachment attachment = findById(attachmentId);
         projectService.checkMembership(attachment.getTask().getProject().getId());
         return minioStorageService.getPresignedDownloadUrl(attachment.getStoredKey(), Duration.ofMinutes(15));
     }
 
+    /**
+     * Извлекает расширение файла.
+     *
+     * @param fileName имя файла
+     * @return расширение с точкой или пустая строка
+     */
     private String extractExtension(String fileName) {
         if (fileName == null) return "";
         int idx = fileName.lastIndexOf('.');
         return idx >= 0 ? fileName.substring(idx) : "";
     }
 
+    /**
+     * Нормализует и валидирует URL.
+     *
+     * @param raw исходная строка URL
+     * @return нормализованный URL или null при невалидном значении
+     */
     private String normalizeUrl(String raw) {
         if (raw == null || raw.isBlank()) {
             return null;

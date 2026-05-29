@@ -29,13 +29,35 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+/**
+ * Рассчитывает агрегированную статистику по проекту и его участникам.
+ */
 public class ProjectStatisticsService {
 
+    /**
+     * Сервис задач.
+     */
     private final TaskService taskService;
+    /**
+     * Сервис проектов.
+     */
     private final ProjectService projectService;
+    /**
+     * Репозиторий истории задач.
+     */
     private final TaskHistoryRepository taskHistoryRepository;
+    /**
+     * Репозиторий замечаний.
+     */
     private final ChangeRequestRepository changeRequestRepository;
 
+    /**
+     * Собирает статистику проекта с учетом фильтра периода и участника.
+     *
+     * @param projectId идентификатор проекта
+     * @param filter фильтр статистики
+     * @return агрегированная статистика проекта
+     */
     public ProjectStatisticsResponse getProjectStatistics(UUID projectId, ProjectStatisticsFilter filter) {
         projectService.checkMembership(projectId);
         LocalDateTime now = LocalDateTime.now();
@@ -66,6 +88,13 @@ public class ProjectStatisticsService {
         );
     }
 
+    /**
+     * Рассчитывает KPI проекта по задачам и срокам.
+     *
+     * @param tasks список задач проекта
+     * @param periodStart начало периода фильтра
+     * @return KPI проекта
+     */
     private ProjectStatisticsResponse.ProjectKpi buildProjectKpi(List<Task> tasks, LocalDateTime periodStart) {
         long done = tasks.stream().filter(t -> t.getStatus() == Task.TaskStatus.DONE).count();
         long inProgress = tasks.stream().filter(t -> t.getStatus() == Task.TaskStatus.IN_PROGRESS).count();
@@ -97,6 +126,14 @@ public class ProjectStatisticsService {
         );
     }
 
+    /**
+     * Рассчитывает KPI по длительностям lead/cycle time.
+     *
+     * @param tasks список задач проекта
+     * @param doneDurationStatsByTask длительности по завершённым задачам
+     * @param now текущий момент времени
+     * @return KPI длительностей
+     */
     private ProjectStatisticsResponse.DurationKpi buildDurationKpi(
             List<Task> tasks,
             Map<UUID, DurationStats> doneDurationStatsByTask,
@@ -136,6 +173,16 @@ public class ProjectStatisticsService {
         );
     }
 
+    /**
+     * Формирует статистику по каждому участнику проекта.
+     *
+     * @param tasks задачи проекта
+     * @param members участники проекта
+     * @param durationByTaskId длительности по задачам
+     * @param periodStart начало периода
+     * @param selectedMemberId идентификатор выбранного участника
+     * @return список статистики по участникам
+     */
     private List<ProjectStatisticsResponse.MemberStats> buildMemberStats(
             List<Task> tasks,
             List<ProjectMember> members,
@@ -221,6 +268,13 @@ public class ProjectStatisticsService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Загружает историю смены статусов задач проекта.
+     *
+     * @param projectId идентификатор проекта
+     * @param periodStart начало периода
+     * @return карта taskId -> список событий смены статуса
+     */
     private Map<UUID, List<TaskHistory>> loadStatusHistoryByTask(UUID projectId, LocalDateTime periodStart) {
         List<TaskHistory> history = periodStart == null
                 ? taskHistoryRepository.findStatusHistoryByProject(projectId, TaskHistory.EventType.TASK_STATUS_CHANGED)
@@ -239,6 +293,13 @@ public class ProjectStatisticsService {
                 ));
     }
 
+    /**
+     * Строит длительности lead/cycle по задачам на основе истории статусов.
+     *
+     * @param tasks задачи проекта
+     * @param statusHistoryByTask история статусов по задачам
+     * @return карта taskId -> рассчитанные длительности
+     */
     private Map<UUID, DurationStats> buildDurationStatsByTask(List<Task> tasks, Map<UUID, List<TaskHistory>> statusHistoryByTask) {
         Map<UUID, DurationStats> result = new HashMap<>();
         for (Task task : tasks) {
@@ -255,6 +316,13 @@ public class ProjectStatisticsService {
         return result;
     }
 
+    /**
+     * Находит первое событие перехода в указанный статус.
+     *
+     * @param statusEvents события статусов
+     * @param status целевой статус
+     * @return дата перехода или null
+     */
     private LocalDateTime firstStatusAt(List<TaskHistory> statusEvents, String status) {
         for (TaskHistory event : statusEvents) {
             if (event.getDetailsJson() == null) {
@@ -268,6 +336,13 @@ public class ProjectStatisticsService {
         return null;
     }
 
+    /**
+     * Извлекает строковое значение по ключу из простого JSON.
+     *
+     * @param json JSON-строка
+     * @param key ключ
+     * @return извлеченное значение или null
+     */
     private String extractJsonValue(String json, String key) {
         String token = "\"" + key + "\":";
         int start = json.indexOf(token);
@@ -285,6 +360,13 @@ public class ProjectStatisticsService {
         return json.substring(valueStart + 1, end);
     }
 
+    /**
+     * Возвращает длительность между датами в часах.
+     *
+     * @param start начало интервала
+     * @param end конец интервала
+     * @return длительность в часах или null
+     */
     private Double durationHours(LocalDateTime start, LocalDateTime end) {
         if (start == null || end == null || end.isBefore(start)) {
             return null;
@@ -292,6 +374,12 @@ public class ProjectStatisticsService {
         return Duration.between(start, end).toHours() / 1.0d;
     }
 
+    /**
+     * Возвращает среднее значение списка.
+     *
+     * @param values значения
+     * @return среднее или null
+     */
     private Double average(List<Double> values) {
         if (values == null || values.isEmpty()) {
             return null;
@@ -299,6 +387,12 @@ public class ProjectStatisticsService {
         return values.stream().mapToDouble(Double::doubleValue).average().orElse(0d);
     }
 
+    /**
+     * Возвращает минимальное значение списка.
+     *
+     * @param values значения
+     * @return минимум или null
+     */
     private Double minimum(List<Double> values) {
         if (values == null || values.isEmpty()) {
             return null;
@@ -306,6 +400,12 @@ public class ProjectStatisticsService {
         return values.stream().mapToDouble(Double::doubleValue).min().orElse(0d);
     }
 
+    /**
+     * Возвращает максимальное значение списка.
+     *
+     * @param values значения
+     * @return максимум или null
+     */
     private Double maximum(List<Double> values) {
         if (values == null || values.isEmpty()) {
             return null;
@@ -313,6 +413,12 @@ public class ProjectStatisticsService {
         return values.stream().mapToDouble(Double::doubleValue).max().orElse(0d);
     }
 
+    /**
+     * Хранит рассчитанные длительности для задачи.
+     *
+     * @param leadHours lead time в часах
+     * @param cycleHours cycle time в часах
+     */
     private record DurationStats(Double leadHours, Double cycleHours) {
     }
 }

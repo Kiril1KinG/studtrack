@@ -18,34 +18,90 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+/**
+ * Управляет жизненным циклом замечаний по задачам в раундах ревью.
+ */
 public class ChangeRequestService {
 
+    /**
+     * Репозиторий замечаний.
+     */
     private final ChangeRequestRepository changeRequestRepository;
+    /**
+     * Сервис работы с раундами ревью.
+     */
     private final TaskReviewRoundService roundService;
+    /**
+     * Сервис работы с задачами.
+     */
     private final TaskService taskService;
+    /**
+     * Сервис работы с исполнителями.
+     */
     private final TaskAssigneeService taskAssigneeService;
+    /**
+     * Сервис работы с пользователями.
+     */
     private final UserService userService;
+    /**
+     * Сервис проверки доступа к проекту.
+     */
     private final ProjectService projectService;
+    /**
+     * Сервис отправки уведомлений.
+     */
     private final NotificationService notificationService;
 
+    /**
+     * Возвращает замечания задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @return список замечаний
+     */
     public List<ChangeRequest> getByTask(UUID taskId) {
         return changeRequestRepository.findByTaskId(taskId);
     }
 
+    /**
+     * Возвращает замечания конкретного раунда ревью.
+     *
+     * @param roundId идентификатор раунда
+     * @return список замечаний
+     */
     public List<ChangeRequest> getByRound(UUID roundId) {
         return changeRequestRepository.findByRoundId(roundId);
     }
 
+    /**
+     * Возвращает открытые замечания раунда ревью.
+     *
+     * @param roundId идентификатор раунда
+     * @return список открытых замечаний
+     */
     public List<ChangeRequest> getOpenByRound(UUID roundId) {
         return changeRequestRepository.findByRoundIdAndStatus(roundId, ChangeRequest.ChangeRequestStatus.OPEN);
     }
 
+    /**
+     * Возвращает замечание по идентификатору.
+     *
+     * @param id идентификатор замечания
+     * @return замечание
+     */
     public ChangeRequest findById(UUID id) {
         return changeRequestRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Замечание", id));
     }
 
     @Transactional
+    /**
+     * Создаёт новое замечание в раунде ревью задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @param roundId идентификатор раунда
+     * @param content текст замечания
+     * @return созданное замечание
+     */
     public ChangeRequest create(UUID taskId, UUID roundId, String content) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
@@ -74,6 +130,13 @@ public class ChangeRequestService {
     }
 
     @Transactional
+    /**
+     * Обновляет текст замечания.
+     *
+     * @param id идентификатор замечания
+     * @param content новый текст
+     * @return обновлённое замечание
+     */
     public ChangeRequest updateContent(UUID id, String content) {
         ChangeRequest changeRequest = findById(id);
         checkTaskMembership(changeRequest);
@@ -82,6 +145,12 @@ public class ChangeRequestService {
     }
 
     @Transactional
+    /**
+     * Переводит замечание в статус исправленного.
+     *
+     * @param id идентификатор замечания
+     * @return обновлённое замечание
+     */
     public ChangeRequest markAsResolved(UUID id) {
         ChangeRequest changeRequest = findById(id);
         checkIsAssignee(changeRequest);
@@ -90,6 +159,12 @@ public class ChangeRequestService {
     }
 
     @Transactional
+    /**
+     * Переводит замечание в статус отклонённого.
+     *
+     * @param id идентификатор замечания
+     * @return обновлённое замечание
+     */
     public ChangeRequest markAsRejected(UUID id) {
         ChangeRequest changeRequest = findById(id);
         checkIsAssignee(changeRequest);
@@ -98,6 +173,12 @@ public class ChangeRequestService {
     }
 
     @Transactional
+    /**
+     * Переоткрывает замечание.
+     *
+     * @param id идентификатор замечания
+     * @return обновлённое замечание
+     */
     public ChangeRequest markAsOpen(UUID id) {
         ChangeRequest changeRequest = findById(id);
         checkIsAssignee(changeRequest);
@@ -106,17 +187,32 @@ public class ChangeRequestService {
     }
 
     @Transactional
+    /**
+     * Удаляет замечание.
+     *
+     * @param id идентификатор замечания
+     */
     public void delete(UUID id) {
         ChangeRequest changeRequest = findById(id);
         checkAuthorship(changeRequest);
         changeRequestRepository.delete(changeRequest);
     }
 
+    /**
+     * Проверяет членство пользователя в проекте задачи замечания.
+     *
+     * @param changeRequest замечание
+     */
     private void checkTaskMembership(ChangeRequest changeRequest) {
         Task task = changeRequest.getTask();
         projectService.checkMembership(task.getProject().getId());
     }
 
+    /**
+     * Проверяет, что действие выполняет исполнитель задачи и раунд ещё открыт.
+     *
+     * @param changeRequest замечание
+     */
     private void checkIsAssignee(ChangeRequest changeRequest) {
         Task task = changeRequest.getTask();
         projectService.checkMembership(task.getProject().getId());
@@ -133,6 +229,11 @@ public class ChangeRequestService {
         }
     }
 
+    /**
+     * Проверяет, что текущий пользователь является автором замечания.
+     *
+     * @param changeRequest замечание
+     */
     private void checkAuthorship(ChangeRequest changeRequest) {
         UUID currentUserId = userService.getCurrentUserId();
         if (!changeRequest.getAuthor().getId().equals(currentUserId)) {

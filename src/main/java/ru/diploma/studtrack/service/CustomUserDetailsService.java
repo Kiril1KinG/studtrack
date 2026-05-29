@@ -12,12 +12,25 @@ import ru.diploma.studtrack.repository.UserRepository;
 
 import java.util.Collections;
 
+/**
+ * Загружает пользователя приложения в формате Spring Security UserDetails.
+ */
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
+    /**
+     * Репозиторий пользователей приложения.
+     */
     private final UserRepository userRepository;
 
+    /**
+     * Ищет пользователя по email для процедуры аутентификации.
+     *
+     * @param email email пользователя
+     * @return объект UserDetails для Spring Security
+     * @throws UsernameNotFoundException если пользователь не найден
+     */
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
