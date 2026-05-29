@@ -12,32 +12,65 @@ import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice(basePackages = "ru.diploma.studtrack.controller.api")
+/**
+ * Глобально обрабатывает исключения REST API и формирует единый формат ошибок.
+ */
 public class GlobalExceptionHandler {
 
+    /**
+     * Обрабатывает ошибку «ресурс не найден».
+     *
+     * @param ex исключение
+     * @return HTTP 404 с телом ошибки
+     */
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Object> handleNotFound(NotFoundException ex) {
         log.warn("Ресурс не найден: {}", ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, ex);
     }
 
+    /**
+     * Обрабатывает ошибку доступа.
+     *
+     * @param ex исключение
+     * @return HTTP 403 с телом ошибки
+     */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex) {
         log.warn("Доступ запрещён: {}", ex.getMessage());
         return buildResponse(HttpStatus.FORBIDDEN, ex);
     }
 
+    /**
+     * Обрабатывает ошибку конфликта данных.
+     *
+     * @param ex исключение
+     * @return HTTP 409 с телом ошибки
+     */
     @ExceptionHandler(AlreadyExistsException.class)
     public ResponseEntity<Object> handleAlreadyExists(AlreadyExistsException ex) {
         log.warn("Конфликт данных: {}", ex.getMessage());
         return buildResponse(HttpStatus.CONFLICT, ex);
     }
 
+    /**
+     * Обрабатывает ошибку некорректного состояния.
+     *
+     * @param ex исключение
+     * @return HTTP 400 с телом ошибки
+     */
     @ExceptionHandler(InvalidStateException.class)
     public ResponseEntity<Object> handleInvalidState(InvalidStateException ex) {
         log.warn("Некорректное состояние: {}", ex.getMessage());
         return buildResponse(HttpStatus.BAD_REQUEST, ex);
     }
 
+    /**
+     * Обрабатывает ошибки валидации аргументов.
+     *
+     * @param ex исключение
+     * @return HTTP 400 с телом ошибки
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Object> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Некорректный аргумент: {}", ex.getMessage());
@@ -50,6 +83,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Обрабатывает непредвиденные ошибки сервера.
+     *
+     * @param ex исключение
+     * @return HTTP 500 с телом ошибки
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGeneric(Exception ex) {
         log.error("Внутренняя ошибка сервера", ex);
@@ -62,6 +101,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    /**
+     * Строит единое тело ответа для доменных исключений.
+     *
+     * @param status HTTP-статус
+     * @param ex исключение приложения
+     * @return ResponseEntity с телом ошибки
+     */
     private ResponseEntity<Object> buildResponse(HttpStatus status, StudTrackException ex) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
@@ -72,6 +118,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, status);
     }
 
+    /**
+     * Возвращает описание ошибки по HTTP-статусу.
+     *
+     * @param status HTTP-статус
+     * @return текст описания ошибки
+     */
     private String getErrorDescription(HttpStatus status) {
         return switch (status) {
             case NOT_FOUND -> "Ресурс не найден";

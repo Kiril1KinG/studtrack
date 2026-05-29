@@ -11,6 +11,9 @@ import ru.diploma.studtrack.model.TaskReviewer;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO запроса отправки ревью.
+ */
 public class ReviewSubmitRequest {
 
     @NotNull(message = "Статус ревью обязателен")

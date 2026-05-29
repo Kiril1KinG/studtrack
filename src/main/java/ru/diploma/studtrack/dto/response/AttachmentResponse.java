@@ -13,6 +13,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO ответа с данными вложения задачи.
+ */
 public class AttachmentResponse {
     private UUID id;
     private UUID taskId;

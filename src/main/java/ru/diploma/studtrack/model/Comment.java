@@ -17,6 +17,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * Сущность комментария задачи, раунда ревью или замечания.
+ */
 public class Comment {
 
     @Id

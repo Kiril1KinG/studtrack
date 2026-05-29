@@ -18,16 +18,32 @@ import jakarta.servlet.http.HttpServletResponse;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+/**
+ * Конфигурирует безопасность приложения и правила доступа к URL.
+ */
 public class SecurityConfig {
 
+    /**
+     * Сервис загрузки данных пользователя для аутентификации.
+     */
     private final CustomUserDetailsService userDetailsService;
 
     @Bean
+    /**
+     * Создаёт кодировщик паролей BCrypt.
+     *
+     * @return bean кодировщика паролей
+     */
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
+    /**
+     * Создаёт провайдер аутентификации на основе DAO.
+     *
+     * @return bean провайдера аутентификации
+     */
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
@@ -35,11 +51,25 @@ public class SecurityConfig {
     }
 
     @Bean
+    /**
+     * Возвращает менеджер аутентификации из конфигурации Spring Security.
+     *
+     * @param config конфигурация аутентификации
+     * @return менеджер аутентификации
+     * @throws Exception если менеджер не может быть создан
+     */
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
     @Bean
+    /**
+     * Формирует цепочку фильтров безопасности.
+     *
+     * @param http объект настройки HTTP-безопасности
+     * @return цепочка фильтров безопасности
+     * @throws Exception если при сборке цепочки возникает ошибка
+     */
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth

@@ -28,6 +28,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * Сущность назначения исполнителя на задачу.
+ */
 public class TaskAssignee {
 
     @Id

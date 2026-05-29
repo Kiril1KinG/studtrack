@@ -14,6 +14,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO ответа с данными задачи.
+ */
 public class TaskResponse {
 
     private UUID id;

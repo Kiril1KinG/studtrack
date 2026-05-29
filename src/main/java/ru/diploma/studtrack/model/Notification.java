@@ -61,7 +61,10 @@ public class Notification {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    public enum NotificationType {
+    /**
+ * Сущность пользовательского уведомления.
+ */
+public enum NotificationType {
         PROJECT_INVITATION,
         TASK_ASSIGNED,
         REVIEWER_ASSIGNED,

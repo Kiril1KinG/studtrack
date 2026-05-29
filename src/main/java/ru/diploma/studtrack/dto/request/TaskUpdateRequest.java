@@ -16,6 +16,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO запроса обновления задачи.
+ */
 public class TaskUpdateRequest {
 
     @NotBlank(message = "Название задачи обязательно")

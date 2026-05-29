@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO запроса создания проекта.
+ */
 public class ProjectCreateRequest {
 
     @NotBlank(message = "Название проекта обязательно")

@@ -28,6 +28,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * Базовая сущность артефакта задачи (файл или ссылка).
+ */
 public class TaskArtifact {
 
     @Id

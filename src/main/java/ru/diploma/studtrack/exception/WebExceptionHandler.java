@@ -10,20 +10,44 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 
 @Slf4j
 @ControllerAdvice(annotations = Controller.class, basePackages = "ru.diploma.studtrack.controller.web")
+/**
+ * Глобально обрабатывает исключения веб-контроллеров и возвращает страницы ошибок.
+ */
 public class WebExceptionHandler {
 
+    /**
+     * Обрабатывает ошибку «не найдено» для web UI.
+     *
+     * @param ex исключение
+     * @param model модель представления
+     * @return имя шаблона страницы 404
+     */
     @ExceptionHandler(NotFoundException.class)
     public String handleNotFound(NotFoundException ex, Model model) {
         log.warn("Web 404: {}", ex.getMessage());
         return errorPage(model, HttpStatus.NOT_FOUND, "Страница не найдена", ex.getMessage(), "error/404");
     }
 
+    /**
+     * Обрабатывает ошибку доступа для web UI.
+     *
+     * @param ex исключение
+     * @param model модель представления
+     * @return имя шаблона страницы 403
+     */
     @ExceptionHandler(AccessDeniedException.class)
     public String handleAccessDenied(AccessDeniedException ex, Model model) {
         log.warn("Web 403: {}", ex.getMessage());
         return errorPage(model, HttpStatus.FORBIDDEN, "Доступ запрещен", ex.getMessage(), "error/403");
     }
 
+    /**
+     * Обрабатывает отсутствие хендлера маршрута.
+     *
+     * @param ex исключение
+     * @param model модель представления
+     * @return имя шаблона страницы 404
+     */
     @ExceptionHandler(NoHandlerFoundException.class)
     public String handleNoHandler(NoHandlerFoundException ex, Model model) {
         String message = "Запрошенная страница не существует";
@@ -31,6 +55,13 @@ public class WebExceptionHandler {
         return errorPage(model, HttpStatus.NOT_FOUND, "Страница не найдена", message, "error/404");
     }
 
+    /**
+     * Обрабатывает непредвиденные ошибки веб-слоя.
+     *
+     * @param ex исключение
+     * @param model модель представления
+     * @return имя шаблона страницы 500
+     */
     @ExceptionHandler(Exception.class)
     public String handleGeneric(Exception ex, Model model) {
         log.error("Web 500", ex);
@@ -38,6 +69,16 @@ public class WebExceptionHandler {
         return errorPage(model, HttpStatus.INTERNAL_SERVER_ERROR, "Внутренняя ошибка", message, "error/500");
     }
 
+    /**
+     * Заполняет модель общими атрибутами страницы ошибки.
+     *
+     * @param model модель представления
+     * @param status HTTP-статус
+     * @param title заголовок страницы
+     * @param message сообщение пользователю
+     * @param viewName имя шаблона
+     * @return имя шаблона страницы ошибки
+     */
     private String errorPage(Model model,
                              HttpStatus status,
                              String title,

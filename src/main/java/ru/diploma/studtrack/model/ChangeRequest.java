@@ -50,7 +50,10 @@ public class ChangeRequest {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public enum ChangeRequestStatus {
+    /**
+ * Сущность замечания по задаче в рамках раунда ревью.
+ */
+public enum ChangeRequestStatus {
         OPEN,
         RESOLVED,
         REJECTED

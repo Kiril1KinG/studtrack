@@ -24,6 +24,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * Сущность членства пользователя в проекте.
+ */
 public class ProjectMember {
 
     @Id

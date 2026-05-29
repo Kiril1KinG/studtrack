@@ -4,14 +4,27 @@ import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.UUID;
 
+/**
+ * Фильтр параметров для расчета статистики проекта.
+ */
 public record ProjectStatisticsFilter(
         Period period,
         UUID memberId
 ) {
+    /**
+     * Создаёт фильтр статистики из строкового периода и идентификатора участника.
+     *
+     * @param rawPeriod строковое значение периода
+     * @param memberId идентификатор участника
+     * @return сформированный фильтр
+     */
     public static ProjectStatisticsFilter of(String rawPeriod, UUID memberId) {
         return new ProjectStatisticsFilter(Period.from(rawPeriod), memberId);
     }
 
+    /**
+     * Определяет период выборки для расчета статистики проекта.
+     */
     public enum Period {
         DAYS_7(7, "7d"),
         DAYS_30(30, "30d"),
