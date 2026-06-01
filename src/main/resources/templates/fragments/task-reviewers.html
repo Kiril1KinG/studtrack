@@ -10,7 +10,7 @@
                 <span class="badge ms-2"
                       th:classappend="${reviewer.status == T(ru.diploma.studtrack.model.TaskReviewer.ReviewStatus).APPROVED} ? 'bg-success' :
                                        (${reviewer.status == T(ru.diploma.studtrack.model.TaskReviewer.ReviewStatus).REJECTED} ? 'bg-danger' : 'bg-secondary')"
-                      th:text="${reviewer.status}">STATUS</span>
+                      th:text="${T(ru.diploma.studtrack.util.UiLabels).reviewStatus(reviewer.status)}">STATUS</span>
             </div>
             <div th:if="${reviewer.user.id == currentUserId}">
                 <form th:action="@{/tasks/{taskId}/reviewers/{reviewerId}/submit(taskId=${taskId}, reviewerId=${reviewer.user.id})}"

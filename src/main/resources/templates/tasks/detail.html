@@ -10,8 +10,8 @@
             <span class="badge ms-2"
                   th:classappend="${task.priority == T(ru.diploma.studtrack.model.Task.Priority).HIGH} ? 'bg-danger' :
                                    (${task.priority == T(ru.diploma.studtrack.model.Task.Priority).MEDIUM} ? 'bg-warning text-dark' : 'bg-secondary')"
-                  th:text="${task.priority}">PRIORITY</span>
-            <span class="badge bg-info text-dark ms-2" th:text="${task.status}">STATUS</span>
+                  th:text="${T(ru.diploma.studtrack.util.UiLabels).taskPriority(task.priority)}">PRIORITY</span>
+            <span class="badge bg-info text-dark ms-2" th:text="${T(ru.diploma.studtrack.util.UiLabels).taskStatus(task.status)}">STATUS</span>
         </h1>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-primary btn-sm" type="button"
@@ -45,7 +45,7 @@
                             <select name="priority" class="form-select">
                                 <option th:each="p : ${priorities}"
                                         th:value="${p}"
-                                        th:text="${p}"
+                                        th:text="${T(ru.diploma.studtrack.util.UiLabels).taskPriority(p)}"
                                         th:selected="${p == task.priority}">PRIORITY</option>
                             </select>
                         </div>
@@ -346,7 +346,7 @@
                         <select name="status" class="form-select" onchange="this.form.submit()">
                             <option th:each="s : ${statuses}"
                                     th:value="${s}"
-                                    th:text="${s}"
+                                    th:text="${T(ru.diploma.studtrack.util.UiLabels).taskStatus(s)}"
                                     th:selected="${s == task.status}">STATUS</option>
                         </select>
                     </form>

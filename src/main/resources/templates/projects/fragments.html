@@ -6,7 +6,7 @@
         <th:block th:each="status : ${statuses}">
             <div class="col" style="min-width: 280px;">
                 <div class="card">
-                    <div class="card-header" th:text="${status}">Статус</div>
+                    <div class="card-header" th:text="${T(ru.diploma.studtrack.util.UiLabels).taskStatus(status)}">Статус</div>
                     <div class="card-body p-2">
                         <div class="task-list" th:attr="data-status=${status}" th:id="'col-' + ${status}">
                             <th:block th:if="${tasksByStatus.containsKey(status)}">
@@ -89,26 +89,26 @@
                 <div class="col-md-6">
                     <div class="border rounded p-3 h-100">
                         <div class="fw-semibold mb-2">Состояние доски</div>
-                        <div class="small mb-1">BACKLOG: <span th:text="${statistics.kpi.backlogTasks}">0</span></div>
-                        <div class="small mb-1">TODO: <span th:text="${statistics.kpi.todoTasks}">0</span></div>
-                        <div class="small mb-1">IN_PROGRESS: <span th:text="${statistics.kpi.inProgressTasks}">0</span></div>
-                        <div class="small mb-1">REVIEW: <span th:text="${statistics.kpi.reviewTasks}">0</span></div>
-                        <div class="small">Открытых (не DONE): <span th:text="${statistics.kpi.openTasks}">0</span></div>
+                        <div class="small mb-1">Бэклог: <span th:text="${statistics.kpi.backlogTasks}">0</span></div>
+                        <div class="small mb-1">К выполнению: <span th:text="${statistics.kpi.todoTasks}">0</span></div>
+                        <div class="small mb-1">В работе: <span th:text="${statistics.kpi.inProgressTasks}">0</span></div>
+                        <div class="small mb-1">На ревью: <span th:text="${statistics.kpi.reviewTasks}">0</span></div>
+                        <div class="small">Открытых (не готово): <span th:text="${statistics.kpi.openTasks}">0</span></div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="border rounded p-3 h-100">
-                        <div class="fw-semibold mb-2">Временные метрики (DONE-only)</div>
+                        <div class="fw-semibold mb-2">Временные метрики (только завершенные)</div>
                         <div class="small mb-1">
-                            Lead time (ч): <span th:text="${statistics.duration.avgLeadHours != null ? #numbers.formatDecimal(statistics.duration.avgLeadHours, 1, 1) : 'N/A'}">N/A</span>
+                            Lead time (ч): <span th:text="${statistics.duration.avgLeadHours != null ? #numbers.formatDecimal(statistics.duration.avgLeadHours, 1, 1) : 'Н/Д'}">Н/Д</span>
                             <span class="text-muted" th:text="${' [n=' + statistics.duration.leadSampleSize + ']'}">[n=0]</span>
                         </div>
                         <div class="small mb-1">
-                            Cycle time (ч): <span th:text="${statistics.duration.avgCycleHours != null ? #numbers.formatDecimal(statistics.duration.avgCycleHours, 1, 1) : 'N/A'}">N/A</span>
+                            Cycle time (ч): <span th:text="${statistics.duration.avgCycleHours != null ? #numbers.formatDecimal(statistics.duration.avgCycleHours, 1, 1) : 'Н/Д'}">Н/Д</span>
                             <span class="text-muted" th:text="${' [n=' + statistics.duration.cycleSampleSize + ']'}">[n=0]</span>
                         </div>
                         <div class="small">
-                            Возраст незавершённых (ч): <span th:text="${statistics.duration.avgOpenAgeHours != null ? #numbers.formatDecimal(statistics.duration.avgOpenAgeHours, 1, 1) : 'N/A'}">N/A</span>
+                            Возраст незавершённых (ч): <span th:text="${statistics.duration.avgOpenAgeHours != null ? #numbers.formatDecimal(statistics.duration.avgOpenAgeHours, 1, 1) : 'Н/Д'}">Н/Д</span>
                         </div>
                     </div>
                 </div>
@@ -122,7 +122,7 @@
                         <th>На исполнении (сейчас)</th>
                         <th>На ревью (pending)</th>
                         <th>Ревью всего</th>
-                        <th>DONE за период</th>
+                        <th>Готово за период</th>
                         <th>Open CR по своим</th>
                         <th>Lead avg (ч)</th>
                         <th>Cycle avg (ч)</th>
@@ -140,11 +140,11 @@
                         <td th:text="${memberStats.doneInPeriod}">0</td>
                         <td th:text="${memberStats.openChangeRequestsInOwnTasks}">0</td>
                         <td>
-                            <span th:text="${memberStats.avgLeadHours != null ? #numbers.formatDecimal(memberStats.avgLeadHours, 1, 1) : 'N/A'}">N/A</span>
+                            <span th:text="${memberStats.avgLeadHours != null ? #numbers.formatDecimal(memberStats.avgLeadHours, 1, 1) : 'Н/Д'}">Н/Д</span>
                             <span class="text-muted small" th:text="${' [n=' + memberStats.leadSampleSize + ']'}">[n=0]</span>
                         </td>
                         <td>
-                            <span th:text="${memberStats.avgCycleHours != null ? #numbers.formatDecimal(memberStats.avgCycleHours, 1, 1) : 'N/A'}">N/A</span>
+                            <span th:text="${memberStats.avgCycleHours != null ? #numbers.formatDecimal(memberStats.avgCycleHours, 1, 1) : 'Н/Д'}">Н/Д</span>
                             <span class="text-muted small" th:text="${' [n=' + memberStats.cycleSampleSize + ']'}">[n=0]</span>
                         </td>
                     </tr>
