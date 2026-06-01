@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
+import ru.diploma.studtrack.exception.AlreadyExistsException;
 import ru.diploma.studtrack.service.UserService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,6 +55,17 @@ class AuthControllerTest {
         String view = controller.register("a@b.c", "abc12345", "abc12345", "Иванов", "Иван", null, redirect);
         assertEquals("redirect:/auth/register", view);
         assertEquals("weak", redirect.getFlashAttributes().get("error"));
+    }
+
+    @Test
+    void registerShouldSetFlashErrorWhenUserAlreadyExists() {
+        RedirectAttributesModelMap redirect = new RedirectAttributesModelMap();
+        doThrow(new AlreadyExistsException("Пользователь с email 'a@b.c' уже существует")).when(userService)
+                .register(anyString(), anyString(), anyString(), anyString(), isNull());
+
+        String view = controller.register("a@b.c", "abc12345", "abc12345", "Иванов", "Иван", null, redirect);
+        assertEquals("redirect:/auth/register", view);
+        assertEquals("Пользователь с email 'a@b.c' уже существует", redirect.getFlashAttributes().get("error"));
     }
 
     @Test

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ru.diploma.studtrack.exception.AlreadyExistsException;
 import ru.diploma.studtrack.service.UserService;
 
 @Slf4j
@@ -87,7 +88,7 @@ public class AuthController {
         try {
             userService.register(email, password, lastName, firstName, patronymic);
             return "redirect:/auth/login?registered";
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | AlreadyExistsException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/auth/register";
         }
