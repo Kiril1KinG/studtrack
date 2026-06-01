@@ -13,6 +13,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO запроса добавления участника в проект.
+ */
 public class AddMemberRequest {
 
     private UUID userId;

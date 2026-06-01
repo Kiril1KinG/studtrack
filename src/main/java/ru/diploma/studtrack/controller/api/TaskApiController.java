@@ -26,14 +26,29 @@ import java.util.List;
 import java.util.UUID;
 
 @Slf4j
+/**
+ * Предоставляет REST-эндпоинты для управления задачами внутри проекта.
+ */
 @RestController
 @RequestMapping("/api/projects/{projectId}/tasks")
 @RequiredArgsConstructor
 public class TaskApiController {
 
+    /**
+     * Выполняет бизнес-логику задач.
+     */
     private final TaskService taskService;
+    /**
+     * Преобразует сущности задач в DTO-ответы API.
+     */
     private final TaskMapper taskMapper;
 
+    /**
+     * Возвращает все задачи проекта.
+     *
+     * @param projectId идентификатор проекта
+     * @return список задач
+     */
     @GetMapping
     public ResponseEntity<List<TaskResponse>> getTasksByProject(@PathVariable UUID projectId) {
         log.info("Запрос на получение задач проекта id: {}", projectId);
@@ -42,6 +57,12 @@ public class TaskApiController {
         return ResponseEntity.ok(taskMapper.toResponseList(tasks));
     }
 
+    /**
+     * Возвращает задачи проекта, назначенные текущему пользователю.
+     *
+     * @param projectId идентификатор проекта
+     * @return список задач пользователя
+     */
     @GetMapping("/my")
     public ResponseEntity<List<TaskResponse>> getMyTasks(@PathVariable UUID projectId) {
         log.info("Запрос на получение задач текущего пользователя в проекте id: {}", projectId);
@@ -50,6 +71,12 @@ public class TaskApiController {
         return ResponseEntity.ok(taskMapper.toResponseList(tasks));
     }
 
+    /**
+     * Возвращает данные задачи по идентификатору.
+     *
+     * @param taskId идентификатор задачи
+     * @return данные задачи
+     */
     @GetMapping("/{taskId}")
     public ResponseEntity<TaskResponse> getTask(@PathVariable UUID taskId) {
         log.info("Запрос на получение задачи id: {}", taskId);
@@ -58,6 +85,13 @@ public class TaskApiController {
         return ResponseEntity.ok(taskMapper.toResponse(task));
     }
 
+    /**
+     * Создаёт задачу в выбранном проекте.
+     *
+     * @param projectId идентификатор проекта
+     * @param request данные создания задачи
+     * @return созданная задача
+     */
     @PostMapping
     public ResponseEntity<TaskResponse> createTask(
             @PathVariable UUID projectId,
@@ -77,6 +111,13 @@ public class TaskApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskMapper.toResponse(task));
     }
 
+    /**
+     * Обновляет поля задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @param request данные обновления задачи
+     * @return обновлённая задача
+     */
     @PutMapping("/{taskId}")
     public ResponseEntity<TaskResponse> updateTask(
             @PathVariable UUID taskId,
@@ -96,6 +137,13 @@ public class TaskApiController {
         return ResponseEntity.ok(taskMapper.toResponse(task));
     }
 
+    /**
+     * Изменяет статус задачи в рабочем процессе.
+     *
+     * @param taskId идентификатор задачи
+     * @param request данные нового статуса
+     * @return задача после изменения статуса
+     */
     @PatchMapping("/{taskId}/status")
     public ResponseEntity<TaskResponse> changeStatus(
             @PathVariable UUID taskId,
@@ -106,6 +154,12 @@ public class TaskApiController {
         return ResponseEntity.ok(taskMapper.toResponse(task));
     }
 
+    /**
+     * Удаляет задачу по идентификатору.
+     *
+     * @param taskId идентификатор задачи
+     * @return пустой ответ со статусом 204
+     */
     @DeleteMapping("/{taskId}")
     public ResponseEntity<Void> deleteTask(@PathVariable UUID taskId) {
         log.info("Запрос на удаление задачи id: {}", taskId);

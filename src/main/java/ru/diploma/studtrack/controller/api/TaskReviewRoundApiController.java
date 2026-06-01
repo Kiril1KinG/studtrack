@@ -20,14 +20,29 @@ import java.util.List;
 import java.util.UUID;
 
 @Slf4j
+/**
+ * Предоставляет REST-эндпоинты для раундов ревью задачи.
+ */
 @RestController
 @RequestMapping("/api/tasks/{taskId}/rounds")
 @RequiredArgsConstructor
 public class TaskReviewRoundApiController {
 
+    /**
+     * Выполняет бизнес-логику раундов ревью.
+     */
     private final TaskReviewRoundService roundService;
+    /**
+     * Преобразует сущности раундов ревью в DTO-ответы API.
+     */
     private final TaskReviewRoundMapper roundMapper;
 
+    /**
+     * Возвращает раунды ревью выбранной задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @return список раундов ревью
+     */
     @GetMapping
     public ResponseEntity<List<TaskReviewRoundResponse>> getRounds(@PathVariable UUID taskId) {
         log.info("Запрос на получение итераций ревью задачи id: {}", taskId);
@@ -36,6 +51,12 @@ public class TaskReviewRoundApiController {
         return ResponseEntity.ok(roundMapper.toResponseList(rounds));
     }
 
+    /**
+     * Возвращает текущий активный раунд ревью задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @return текущий раунд или 404, если раунд отсутствует
+     */
     @GetMapping("/current")
     public ResponseEntity<TaskReviewRoundResponse> getCurrentRound(@PathVariable UUID taskId) {
         log.info("Запрос на получение текущей итерации ревью задачи id: {}", taskId);
@@ -48,6 +69,13 @@ public class TaskReviewRoundApiController {
         return ResponseEntity.ok(roundMapper.toResponse(round));
     }
 
+    /**
+     * Создаёт новый раунд ревью для задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @param summaryComment необязательный итоговый комментарий
+     * @return созданный раунд ревью
+     */
     @PostMapping
     public ResponseEntity<TaskReviewRoundResponse> createRound(
             @PathVariable UUID taskId,
@@ -59,6 +87,13 @@ public class TaskReviewRoundApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(roundMapper.toResponse(round));
     }
 
+    /**
+     * Обновляет итоговый комментарий раунда ревью.
+     *
+     * @param roundId идентификатор раунда ревью
+     * @param summaryComment новый текст итогового комментария
+     * @return обновлённый раунд ревью
+     */
     @PutMapping("/{roundId}/summary")
     public ResponseEntity<TaskReviewRoundResponse> updateSummary(
             @PathVariable UUID roundId,

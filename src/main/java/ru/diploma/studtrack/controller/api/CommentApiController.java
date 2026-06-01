@@ -24,14 +24,29 @@ import java.util.List;
 import java.util.UUID;
 
 @Slf4j
+/**
+ * Предоставляет REST-эндпоинты для комментариев задач и раундов ревью.
+ */
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class CommentApiController {
 
+    /**
+     * Выполняет бизнес-операции с комментариями.
+     */
     private final CommentService commentService;
+    /**
+     * Преобразует сущности комментариев в DTO-ответы API.
+     */
     private final CommentMapper commentMapper;
 
+    /**
+     * Возвращает комментарии выбранной задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @return список комментариев
+     */
     @GetMapping("/tasks/{taskId}/comments")
     public ResponseEntity<List<CommentResponse>> getTaskComments(@PathVariable UUID taskId) {
         log.info("Запрос на получение комментариев задачи id: {}", taskId);
@@ -40,6 +55,13 @@ public class CommentApiController {
         return ResponseEntity.ok(commentMapper.toResponseList(comments));
     }
 
+    /**
+     * Создаёт новый комментарий к задаче.
+     *
+     * @param taskId идентификатор задачи
+     * @param request данные комментария
+     * @return созданный комментарий
+     */
     @PostMapping("/tasks/{taskId}/comments")
     public ResponseEntity<CommentResponse> addTaskComment(
             @PathVariable UUID taskId,
@@ -51,6 +73,14 @@ public class CommentApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(commentMapper.toResponse(comment));
     }
 
+    /**
+     * Создаёт новый комментарий в указанном раунде ревью.
+     *
+     * @param taskId идентификатор задачи
+     * @param roundId идентификатор раунда ревью
+     * @param request данные комментария
+     * @return созданный комментарий
+     */
     @PostMapping("/tasks/{taskId}/rounds/{roundId}/comments")
     public ResponseEntity<CommentResponse> addRoundComment(
             @PathVariable UUID taskId,
@@ -63,6 +93,13 @@ public class CommentApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(commentMapper.toResponse(comment));
     }
 
+    /**
+     * Обновляет текст комментария и набор его вложений.
+     *
+     * @param id идентификатор комментария
+     * @param request данные обновления
+     * @return обновлённый комментарий
+     */
     @PutMapping("/comments/{id}")
     public ResponseEntity<CommentResponse> updateComment(
             @PathVariable UUID id,
@@ -78,6 +115,12 @@ public class CommentApiController {
         return ResponseEntity.ok(commentMapper.toResponse(comment));
     }
 
+    /**
+     * Удаляет комментарий по идентификатору.
+     *
+     * @param id идентификатор комментария
+     * @return пустой ответ со статусом 204
+     */
     @DeleteMapping("/comments/{id}")
     public ResponseEntity<Void> deleteComment(@PathVariable UUID id) {
         log.info("Запрос на удаление комментария id: {}", id);

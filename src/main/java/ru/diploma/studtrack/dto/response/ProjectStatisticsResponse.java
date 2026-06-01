@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * DTO ответа с агрегированной статистикой проекта.
+ */
 public record ProjectStatisticsResponse(
         ProjectStatisticsFilter.Period period,
         UUID selectedMemberId,
@@ -14,6 +17,9 @@ public record ProjectStatisticsResponse(
         DurationKpi duration,
         List<MemberStats> members
 ) {
+    /**
+     * Группа метрик проекта по статусам задач и выполнению.
+     */
     public record ProjectKpi(
             long totalTasks,
             long doneTasks,
@@ -42,6 +48,9 @@ public record ProjectStatisticsResponse(
         }
     }
 
+    /**
+     * Метрики длительности задач: lead time, cycle time и возраст открытых задач.
+     */
     public record DurationKpi(
             long leadSampleSize,
             long cycleSampleSize,
@@ -55,6 +64,9 @@ public record ProjectStatisticsResponse(
     ) {
     }
 
+    /**
+     * Персональные метрики участника проекта.
+     */
     public record MemberStats(
             UUID userId,
             String fullName,

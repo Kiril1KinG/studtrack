@@ -22,14 +22,29 @@ import java.util.List;
 import java.util.UUID;
 
 @Slf4j
+/**
+ * Предоставляет REST-эндпоинты для ревьюеров задачи и отправки ревью.
+ */
 @RestController
 @RequestMapping("/api/tasks/{taskId}/reviewers")
 @RequiredArgsConstructor
 public class TaskReviewerApiController {
 
+    /**
+     * Выполняет бизнес-логику ревьюеров.
+     */
     private final TaskReviewerService taskReviewerService;
+    /**
+     * Преобразует сущности ревьюеров в DTO-ответы API.
+     */
     private final TaskReviewerMapper taskReviewerMapper;
 
+    /**
+     * Возвращает всех ревьюеров, назначенных на задачу.
+     *
+     * @param taskId идентификатор задачи
+     * @return список ревьюеров
+     */
     @GetMapping
     public ResponseEntity<List<TaskReviewerResponse>> getReviewers(@PathVariable UUID taskId) {
         log.info("Запрос на получение ревьюеров задачи id: {}", taskId);
@@ -38,6 +53,12 @@ public class TaskReviewerApiController {
         return ResponseEntity.ok(taskReviewerMapper.toResponseList(reviewers));
     }
 
+    /**
+     * Возвращает ожидающие проверки текущего пользователя по задаче.
+     *
+     * @param taskId идентификатор задачи
+     * @return список ожидающих записей ревью
+     */
     @GetMapping("/pending")
     public ResponseEntity<List<TaskReviewerResponse>> getPendingReviews(@PathVariable UUID taskId) {
         log.info("Запрос на получение ожидающих ревью для текущего пользователя по задаче id: {}", taskId);
@@ -46,6 +67,13 @@ public class TaskReviewerApiController {
         return ResponseEntity.ok(taskReviewerMapper.toResponseList(pending));
     }
 
+    /**
+     * Назначает ревьюера на задачу.
+     *
+     * @param taskId идентификатор задачи
+     * @param reviewerId идентификатор пользователя-ревьюера
+     * @return созданное назначение ревьюера
+     */
     @PostMapping("/{reviewerId}")
     public ResponseEntity<TaskReviewerResponse> addReviewer(
             @PathVariable UUID taskId,
@@ -56,6 +84,13 @@ public class TaskReviewerApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskReviewerMapper.toResponse(reviewer));
     }
 
+    /**
+     * Удаляет назначение ревьюера с задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @param reviewerId идентификатор пользователя-ревьюера
+     * @return пустой ответ со статусом 204
+     */
     @DeleteMapping("/{reviewerId}")
     public ResponseEntity<Void> removeReviewer(
             @PathVariable UUID taskId,
@@ -66,6 +101,14 @@ public class TaskReviewerApiController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Отправляет решение ревью и необязательный комментарий.
+     *
+     * @param taskId идентификатор задачи
+     * @param reviewerId идентификатор пользователя-ревьюера
+     * @param request данные отправки ревью
+     * @return обновлённое назначение ревьюера
+     */
     @PostMapping("/{reviewerId}/submit")
     public ResponseEntity<TaskReviewerResponse> submitReview(
             @PathVariable UUID taskId,

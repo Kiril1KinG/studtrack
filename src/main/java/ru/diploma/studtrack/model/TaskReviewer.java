@@ -57,7 +57,10 @@ public class TaskReviewer {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public enum ReviewStatus {
+    /**
+ * Сущность назначения ревьюера на задачу.
+ */
+public enum ReviewStatus {
         PENDING,
         APPROVED,
         REJECTED

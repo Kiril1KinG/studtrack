@@ -30,20 +30,53 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
+/**
+ * Обрабатывает веб-страницы проекта: доску, репозиторий, статистику и участников.
+ */
 @Controller
 @RequestMapping("/projects")
 @RequiredArgsConstructor
 public class WebProjectController {
 
+    /**
+     * Предоставляет операции управления проектами и участниками.
+     */
     private final ProjectService projectService;
+    /**
+     * Предоставляет операции управления задачами проекта.
+     */
     private final TaskService taskService;
+    /**
+     * Предоставляет данные текущего пользователя.
+     */
     private final UserService userService;
+    /**
+     * Предоставляет операции со вложениями задач.
+     */
     private final TaskAttachmentService taskAttachmentService;
+    /**
+     * Сохраняет историю изменений задач.
+     */
     private final TaskHistoryService taskHistoryService;
+    /**
+     * Рассчитывает агрегированную статистику проекта.
+     */
     private final ProjectStatisticsService projectStatisticsService;
+    /**
+     * Формирует читаемое значение вложения для истории задач.
+     */
     private final AttachmentHistoryValueService attachmentHistoryValueService;
+    /**
+     * Преобразует исключения в пользовательские сообщения для UI.
+     */
     private final WebErrorMessageService webErrorMessageService;
 
+    /**
+     * Отображает список проектов текущего пользователя.
+     *
+     * @param model модель представления
+     * @return имя шаблона списка проектов
+     */
     @GetMapping
     public String listProjects(Model model) {
         List<Project> projects = projectService.getMyProjects();
@@ -52,12 +85,25 @@ public class WebProjectController {
         return "projects/list";
     }
 
+    /**
+     * Отображает страницу создания проекта.
+     *
+     * @param model модель представления
+     * @return имя шаблона страницы создания проекта
+     */
     @GetMapping("/create")
     public String createProjectForm(Model model) {
         model.addAttribute("pageTitle", "Создать проект");
         return "projects/create";
     }
 
+    /**
+     * Создаёт новый проект и перенаправляет на его страницу.
+     *
+     * @param name название проекта
+     * @param description описание проекта
+     * @return URL перенаправления на страницу проекта
+     */
     @PostMapping("/create")
     public String createProject(@RequestParam String name,
                                 @RequestParam(required = false) String description) {
@@ -66,6 +112,17 @@ public class WebProjectController {
         return "redirect:/projects/" + project.getId();
     }
 
+    /**
+     * Отображает страницу проекта с выбранной вкладкой и подготовленными данными.
+     *
+     * @param id идентификатор проекта
+     * @param tab активная вкладка
+     * @param sort сортировка артефактов репозитория
+     * @param period период статистики
+     * @param memberId фильтр статистики по участнику
+     * @param model модель представления
+     * @return имя шаблона страницы проекта
+     */
     @GetMapping("/{id}")
     public String viewProject(@PathVariable UUID id,
                               @RequestParam(required = false, defaultValue = "board") String tab,
@@ -103,6 +160,13 @@ public class WebProjectController {
         return "projects/detail";
     }
 
+    /**
+     * Возвращает HTMX-фрагмент канбан-доски проекта.
+     *
+     * @param id идентификатор проекта
+     * @param model модель представления
+     * @return имя фрагмента канбан-доски
+     */
     @GetMapping("/{id}/board")
     public String getKanbanBoard(@PathVariable UUID id, Model model) {
         Project project = getAccessibleProject(id);
@@ -111,6 +175,14 @@ public class WebProjectController {
         return "projects/fragments :: kanbanBoard";
     }
 
+    /**
+     * Возвращает HTMX-фрагмент вкладки репозитория проекта.
+     *
+     * @param id идентификатор проекта
+     * @param sort способ сортировки артефактов
+     * @param model модель представления
+     * @return имя фрагмента вкладки репозитория
+     */
     @GetMapping("/{id}/repository")
     public String getRepository(@PathVariable UUID id,
                                 @RequestParam(required = false, defaultValue = "newest") String sort,
@@ -128,6 +200,15 @@ public class WebProjectController {
         return "projects/fragments :: repositoryTab";
     }
 
+    /**
+     * Возвращает HTMX-фрагмент вкладки статистики проекта.
+     *
+     * @param id идентификатор проекта
+     * @param period период расчёта статистики
+     * @param memberId фильтр по участнику
+     * @param model модель представления
+     * @return имя фрагмента вкладки статистики
+     */
     @GetMapping("/{id}/statistics")
     public String getStatistics(@PathVariable UUID id,
                                 @RequestParam(required = false, defaultValue = "all") String period,
@@ -145,6 +226,14 @@ public class WebProjectController {
         return "projects/fragments :: statisticsTab";
     }
 
+    /**
+     * Удаляет артефакт из репозитория проекта и фиксирует событие в истории задачи.
+     *
+     * @param projectId идентификатор проекта
+     * @param artifactId идентификатор артефакта
+     * @param sort способ сортировки репозитория
+     * @return URL перенаправления на вкладку репозитория
+     */
     @PostMapping("/{projectId}/repository/{artifactId}/delete")
     public String deleteRepositoryArtifact(@PathVariable UUID projectId,
                                            @PathVariable UUID artifactId,
@@ -162,6 +251,14 @@ public class WebProjectController {
         return "redirect:/projects/" + projectId + "?tab=repository&sort=" + sort;
     }
 
+    /**
+     * Создаёт задачу проекта и возвращает обновлённый фрагмент канбан-доски.
+     *
+     * @param projectId идентификатор проекта
+     * @param request данные создания задачи
+     * @param model модель представления
+     * @return имя фрагмента канбан-доски
+     */
     @PostMapping("/{projectId}/tasks")
     public String createTask(@PathVariable UUID projectId,
                              @Valid @ModelAttribute TaskCreateRequest request,
@@ -183,6 +280,15 @@ public class WebProjectController {
         return "projects/fragments :: kanbanBoard";
     }
 
+    /**
+     * Обновляет проект и перенаправляет на вкладку настроек.
+     *
+     * @param id идентификатор проекта
+     * @param name новое название
+     * @param description новое описание
+     * @param redirectAttributes атрибуты flash-сообщений
+     * @return URL перенаправления после операции
+     */
     @PostMapping("/{id}/update")
     public String updateProject(@PathVariable UUID id,
                                 @RequestParam String name,
@@ -198,6 +304,13 @@ public class WebProjectController {
         );
     }
 
+    /**
+     * Удаляет проект и перенаправляет на список проектов.
+     *
+     * @param id идентификатор проекта
+     * @param redirectAttributes атрибуты flash-сообщений
+     * @return URL перенаправления после операции
+     */
     @PostMapping("/{id}/delete")
     public String deleteProject(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
         return executeProjectAction(
@@ -210,6 +323,14 @@ public class WebProjectController {
         );
     }
 
+    /**
+     * Добавляет участника по email в проект.
+     *
+     * @param id идентификатор проекта
+     * @param email email участника
+     * @param redirectAttributes атрибуты flash-сообщений
+     * @return URL перенаправления после операции
+     */
     @PostMapping("/{id}/members/add")
     public String addMember(@PathVariable UUID id,
                             @RequestParam String email,
@@ -227,6 +348,14 @@ public class WebProjectController {
         );
     }
 
+    /**
+     * Удаляет участника из проекта.
+     *
+     * @param id идентификатор проекта
+     * @param userId идентификатор пользователя
+     * @param redirectAttributes атрибуты flash-сообщений
+     * @return URL перенаправления после операции
+     */
     @PostMapping("/{id}/members/{userId}/remove")
     public String removeMember(@PathVariable UUID id,
                                @PathVariable UUID userId,
@@ -241,6 +370,13 @@ public class WebProjectController {
         );
     }
 
+    /**
+     * Выполняет выход текущего пользователя из проекта.
+     *
+     * @param id идентификатор проекта
+     * @param redirectAttributes атрибуты flash-сообщений
+     * @return URL перенаправления после операции
+     */
     @PostMapping("/{id}/leave")
     public String leaveProject(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
         return executeProjectAction(
@@ -253,12 +389,25 @@ public class WebProjectController {
         );
     }
 
+    /**
+     * Возвращает проект и проверяет доступ текущего пользователя по членству.
+     *
+     * @param projectId идентификатор проекта
+     * @return доступный проект
+     */
     private Project getAccessibleProject(UUID projectId) {
         Project project = projectService.findById(projectId);
         projectService.checkMembership(projectId);
         return project;
     }
 
+    /**
+     * Заполняет модель атрибутами канбан-доски проекта.
+     *
+     * @param model модель представления
+     * @param project проект
+     * @param tasks задачи проекта
+     */
     private void addKanbanAttributes(Model model, Project project, List<Task> tasks) {
         KanbanModel kanbanModel = buildKanbanModel(tasks);
         model.addAttribute("project", project);
@@ -268,12 +417,29 @@ public class WebProjectController {
         model.addAttribute("statuses", Task.TaskStatus.values());
     }
 
+    /**
+     * Перезаполняет модель данными доски проекта для ререндера HTMX-фрагмента.
+     *
+     * @param model модель представления
+     * @param projectId идентификатор проекта
+     */
     private void addProjectBoardModel(Model model, UUID projectId) {
         Project project = getAccessibleProject(projectId);
         List<Task> tasks = taskService.getTasksByProject(projectId);
         addKanbanAttributes(model, project, tasks);
     }
 
+    /**
+     * Выполняет действие над проектом с единым обработчиком ошибок и редиректами.
+     *
+     * @param projectId идентификатор проекта
+     * @param actionLabel название действия для лога
+     * @param redirectAttributes атрибуты flash-сообщений
+     * @param successRedirect URL при успешном выполнении
+     * @param failureRedirect URL при ошибке
+     * @param action выполняемое действие
+     * @return URL перенаправления после выполнения
+     */
     private String executeProjectAction(UUID projectId,
                                         String actionLabel,
                                         RedirectAttributes redirectAttributes,
@@ -293,10 +459,23 @@ public class WebProjectController {
         }
     }
 
+    /**
+     * Формирует redirect-URL на указанную вкладку проекта.
+     *
+     * @param projectId идентификатор проекта
+     * @param tab имя вкладки
+     * @return URL перенаправления
+     */
     private String redirectToTab(UUID projectId, String tab) {
         return "redirect:/projects/" + projectId + "?tab=" + tab;
     }
 
+    /**
+     * Строит модель канбан-доски из списка задач.
+     *
+     * @param tasks задачи проекта
+     * @return агрегированная модель канбан-доски
+     */
     private KanbanModel buildKanbanModel(List<Task> tasks) {
         Map<Task.TaskStatus, List<Task>> tasksByStatus = tasks.stream()
                 .collect(Collectors.groupingBy(Task::getStatus));
@@ -305,6 +484,13 @@ public class WebProjectController {
         return new KanbanModel(tasksByStatus, reviewStateByTaskId, reviewStatsByTaskId);
     }
 
+    /**
+     * Хранит агрегированные данные для отображения канбан-доски.
+     *
+     * @param tasksByStatus задачи, сгруппированные по статусу
+     * @param reviewStateByTaskId текстовый статус ревью по задачам
+     * @param reviewStatsByTaskId числовая статистика ревью по задачам
+     */
     private record KanbanModel(
             Map<Task.TaskStatus, List<Task>> tasksByStatus,
             Map<UUID, String> reviewStateByTaskId,

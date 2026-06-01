@@ -63,7 +63,10 @@ public class TaskHistory {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public enum EventType {
+    /**
+ * Сущность истории изменений задачи.
+ */
+public enum EventType {
         TASK_FIELD_CHANGED,
         TASK_STATUS_CHANGED,
         ASSIGNEE_ADDED,

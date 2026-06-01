@@ -28,33 +28,87 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+/**
+ * Управляет жизненным циклом задач, статусами, исполнителями и правилами ревью.
+ */
 public class TaskService {
+    /**
+     * Хранит агрегированную статистику ревью по задаче.
+     *
+     * @param approved количество одобренных ревью
+     * @param rejected количество отклонённых ревью
+     * @param pending количество ожидающих ревью
+     */
     public record ReviewStats(long approved, long rejected, long pending) {}
 
+    /**
+     * Репозиторий задач.
+     */
     private final TaskRepository taskRepository;
+    /**
+     * Репозиторий связей исполнителей.
+     */
     private final TaskAssigneeRepository taskAssigneeRepository;
+    /**
+     * Репозиторий связей ревьюеров.
+     */
     private final TaskReviewerRepository taskReviewerRepository;
+    /**
+     * Репозиторий раундов ревью.
+     */
     private final TaskReviewRoundRepository taskReviewRoundRepository;
+    /**
+     * Сервис проектов.
+     */
     private final ProjectService projectService;
+    /**
+     * Сервис пользователей.
+     */
     private final UserService userService;
+    /**
+     * Сервис истории задачи.
+     */
     private final TaskHistoryService taskHistoryService;
 
+    /**
+     * Возвращает задачи проекта.
+     *
+     * @param projectId идентификатор проекта
+     * @return список задач
+     */
     public List<Task> getTasksByProject(UUID projectId) {
         projectService.checkMembership(projectId);
         return taskRepository.findByProjectIdOrderByCreatedAtDesc(projectId);
     }
 
+    /**
+     * Возвращает задачи текущего пользователя в проекте.
+     *
+     * @param projectId идентификатор проекта
+     * @return список задач пользователя
+     */
     public List<Task> getMyTasks(UUID projectId) {
         projectService.checkMembership(projectId);
         UUID currentUserId = userService.getCurrentUserId();
         return collectAssignedTasks(currentUserId, task -> task.getProject().getId().equals(projectId));
     }
 
+    /**
+     * Возвращает активные задачи, назначенные текущему пользователю.
+     *
+     * @return список назначенных задач
+     */
     public List<Task> getAssignedToMe() {
         UUID currentUserId = userService.getCurrentUserId();
         return collectAssignedTasks(currentUserId, task -> true);
     }
 
+    /**
+     * Возвращает состояние ревью по каждой задаче для канбан-доски.
+     *
+     * @param tasks список задач
+     * @return карта taskId -> состояние ревью
+     */
     public Map<UUID, String> getReviewStateByTaskId(List<Task> tasks) {
         Map<UUID, String> reviewStateByTaskId = new HashMap<>();
         for (Task task : tasks) {
@@ -71,6 +125,12 @@ public class TaskService {
         return reviewStateByTaskId;
     }
 
+    /**
+     * Возвращает агрегированную статистику ревью для набора задач.
+     *
+     * @param tasks список задач
+     * @return карта taskId -> статистика ревью
+     */
     public Map<UUID, ReviewStats> getReviewStatsByTaskId(List<Task> tasks) {
         Map<UUID, ReviewStats> reviewStatsByTaskId = new HashMap<>();
         for (Task task : tasks) {
@@ -83,6 +143,11 @@ public class TaskService {
         return reviewStatsByTaskId;
     }
 
+    /**
+     * Возвращает ожидающие ревью текущего пользователя.
+     *
+     * @return список ожидающих ревью
+     */
     public List<TaskReviewer> getPendingReviewsForMe() {
         UUID currentUserId = userService.getCurrentUserId();
         return taskReviewerRepository.findByUserIdAndStatus(currentUserId, TaskReviewer.ReviewStatus.PENDING)
@@ -91,12 +156,30 @@ public class TaskService {
                 .toList();
     }
 
+    /**
+     * Возвращает задачу по идентификатору.
+     *
+     * @param id идентификатор задачи
+     * @return задача
+     */
     public Task findById(UUID id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Задача", id));
     }
 
     @Transactional
+    /**
+     * Создаёт задачу в проекте.
+     *
+     * @param projectId идентификатор проекта
+     * @param title заголовок
+     * @param description описание
+     * @param priority приоритет
+     * @param reviewRequired флаг обязательного ревью
+     * @param assigneeId идентификатор исполнителя
+     * @param deadline дедлайн
+     * @return созданная задача
+     */
     public Task create(UUID projectId, String title, String description, Task.Priority priority, boolean reviewRequired, UUID assigneeId, LocalDate deadline) {
         projectService.checkMembership(projectId);
         Project project = projectService.findById(projectId);
@@ -118,6 +201,18 @@ public class TaskService {
     }
 
     @Transactional
+    /**
+     * Обновляет задачу и применяет связанные бизнес-правила.
+     *
+     * @param id идентификатор задачи
+     * @param title заголовок
+     * @param description описание
+     * @param priority приоритет
+     * @param assigneeId идентификатор исполнителя
+     * @param reviewRequired флаг обязательного ревью
+     * @param deadline дедлайн
+     * @return обновлённая задача
+     */
     public Task update(UUID id, String title, String description, Task.Priority priority, UUID assigneeId, boolean reviewRequired, LocalDate deadline) {
         Task task = findById(id);
         projectService.checkMembership(task.getProject().getId());
@@ -170,6 +265,11 @@ public class TaskService {
     }
 
     @Transactional
+    /**
+     * Удаляет задачу.
+     *
+     * @param id идентификатор задачи
+     */
     public void delete(UUID id) {
         Task task = findById(id);
         projectService.checkMembership(task.getProject().getId());
@@ -177,6 +277,13 @@ public class TaskService {
     }
 
     @Transactional
+    /**
+     * Изменяет статус задачи с проверкой ограничений ревью.
+     *
+     * @param id идентификатор задачи
+     * @param newStatus новый статус
+     * @return обновлённая задача
+     */
     public Task changeStatus(UUID id, Task.TaskStatus newStatus) {
         Task task = findById(id);
         projectService.checkMembership(task.getProject().getId());

@@ -14,6 +14,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO запроса обновления комментария.
+ */
 public class CommentUpdateRequest {
 
     @NotBlank(message = "Текст комментария обязателен")

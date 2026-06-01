@@ -13,6 +13,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO ответа с данными ревьюера.
+ */
 public class TaskReviewerResponse {
 
     private UUID id;

@@ -17,14 +17,32 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+/**
+ * Формирует и сохраняет историю изменений задач.
+ */
 public class TaskHistoryService {
 
+    /**
+     * Репозиторий истории задач.
+     */
     private final TaskHistoryRepository taskHistoryRepository;
 
+    /**
+     * Возвращает историю задачи в порядке от новых к старым.
+     *
+     * @param taskId идентификатор задачи
+     * @return список записей истории
+     */
     public List<TaskHistory> getByTask(UUID taskId) {
         return taskHistoryRepository.findByTaskIdOrderByCreatedAtDesc(taskId);
     }
 
+    /**
+     * Преобразует запись истории в человекочитаемую фразу для UI.
+     *
+     * @param entry запись истории
+     * @return текст действия пользователя
+     */
     public String toHumanMessage(TaskHistory entry) {
         return switch (entry.getEventType()) {
             case TASK_FIELD_CHANGED -> {
@@ -48,6 +66,15 @@ public class TaskHistoryService {
     }
 
     @Transactional
+    /**
+     * Сохраняет изменение поля задачи.
+     *
+     * @param task задача
+     * @param actor пользователь-инициатор
+     * @param fieldName имя поля
+     * @param oldValue старое значение
+     * @param newValue новое значение
+     */
     public void recordFieldChange(Task task,
                                   User actor,
                                   String fieldName,
@@ -71,6 +98,13 @@ public class TaskHistoryService {
     }
 
     @Transactional
+    /**
+     * Сохраняет событие истории без дополнительных деталей.
+     *
+     * @param task задача
+     * @param actor пользователь-инициатор
+     * @param eventType тип события
+     */
     public void recordEvent(Task task,
                             User actor,
                             TaskHistory.EventType eventType) {
@@ -78,6 +112,14 @@ public class TaskHistoryService {
     }
 
     @Transactional
+    /**
+     * Сохраняет событие истории с деталями в виде map.
+     *
+     * @param task задача
+     * @param actor пользователь-инициатор
+     * @param eventType тип события
+     * @param details детали события
+     */
     public void recordEvent(Task task,
                             User actor,
                             TaskHistory.EventType eventType,
@@ -86,6 +128,14 @@ public class TaskHistoryService {
     }
 
     @Transactional
+    /**
+     * Сохраняет событие истории с деталями в виде JSON-строки.
+     *
+     * @param task задача
+     * @param actor пользователь-инициатор
+     * @param eventType тип события
+     * @param detailsJson сериализованные детали события
+     */
     public void recordEvent(Task task,
                             User actor,
                             TaskHistory.EventType eventType,

@@ -13,6 +13,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO ответа с данными замечания.
+ */
 public class ChangeRequestResponse {
 
     private UUID id;

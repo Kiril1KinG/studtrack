@@ -16,7 +16,7 @@
                         <option value="" th:selected="${selectedPriority == null}">Все приоритеты</option>
                         <option th:each="p : ${priorities}"
                                 th:value="${p}"
-                                th:text="${p}"
+                                th:text="${T(ru.diploma.studtrack.util.UiLabels).taskPriority(p)}"
                                 th:selected="${selectedPriority == p}">PRIORITY</option>
                     </select>
                 </div>
@@ -70,13 +70,13 @@
                                 <span class="badge ms-2"
                                       th:classappend="${task.priority == T(ru.diploma.studtrack.model.Task.Priority).HIGH} ? 'bg-danger' :
                                                        (${task.priority == T(ru.diploma.studtrack.model.Task.Priority).MEDIUM} ? 'bg-warning text-dark' : 'bg-secondary')"
-                                      th:text="${task.priority}">PRIORITY</span>
+                                      th:text="${T(ru.diploma.studtrack.util.UiLabels).taskPriority(task.priority)}">PRIORITY</span>
                             </div>
                             <div class="small text-muted mb-1">
                                 <a th:href="@{/projects/{id}(id=${task.project.id})}" th:text="${task.project.name}"
                                    class="text-decoration-none text-muted">Проект</a>
                             </div>
-                            <span class="badge bg-info text-dark" th:text="${task.status}">STATUS</span>
+                            <span class="badge bg-info text-dark" th:text="${T(ru.diploma.studtrack.util.UiLabels).taskStatus(task.status)}">STATUS</span>
                             <div th:if="${task.deadline != null}" class="small mt-2"
                                  th:classappend="${task.deadline.isBefore(T(java.time.LocalDate).now())} ? 'text-danger fw-semibold' : 'text-muted'">
                                 <i class="bi bi-calendar-event me-1"></i>
@@ -106,7 +106,7 @@
                                 <span class="badge ms-2"
                                       th:classappend="${reviewer.task.priority == T(ru.diploma.studtrack.model.Task.Priority).HIGH} ? 'bg-danger' :
                                                        (${reviewer.task.priority == T(ru.diploma.studtrack.model.Task.Priority).MEDIUM} ? 'bg-warning text-dark' : 'bg-secondary')"
-                                      th:text="${reviewer.task.priority}">PRIORITY</span>
+                                      th:text="${T(ru.diploma.studtrack.util.UiLabels).taskPriority(reviewer.task.priority)}">PRIORITY</span>
                             </div>
                             <div class="small text-muted mb-1">
                                 <a th:href="@{/projects/{id}(id=${reviewer.task.project.id})}"

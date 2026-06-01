@@ -22,21 +22,60 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+/**
+ * Управляет раундами ревью задач.
+ */
 public class TaskReviewRoundService {
 
+    /**
+     * Репозиторий раундов ревью.
+     */
     private final TaskReviewRoundRepository roundRepository;
+    /**
+     * Репозиторий назначений ревьюеров.
+     */
     private final TaskReviewerRepository taskReviewerRepository;
+    /**
+     * Сервис задач.
+     */
     private final TaskService taskService;
+    /**
+     * Сервис исполнителей задач.
+     */
     private final TaskAssigneeService taskAssigneeService;
+    /**
+     * Сервис пользователей.
+     */
     private final UserService userService;
+    /**
+     * Сервис проверки доступа в проекте.
+     */
     private final ProjectService projectService;
+    /**
+     * Сервис уведомлений.
+     */
     private final NotificationService notificationService;
+    /**
+     * Сервис истории задач.
+     */
     private final TaskHistoryService taskHistoryService;
 
+    /**
+     * Возвращает раунды ревью задачи в порядке возрастания номера.
+     *
+     * @param taskId идентификатор задачи
+     * @return список раундов
+     */
     public List<TaskReviewRound> getRoundsByTask(UUID taskId) {
         return roundRepository.findByTaskIdOrderByRoundNumberAsc(taskId);
     }
 
+    /**
+     * Проверяет, можно ли начать новый раунд ревью.
+     *
+     * @param taskId идентификатор задачи
+     * @return true, если предыдущий раунд закрыт или отсутствует
+     */
     public boolean canStartNewRound(UUID taskId) {
         List<TaskReviewRound> rounds = roundRepository.findByTaskIdOrderByRoundNumberDesc(taskId);
         if (rounds.isEmpty()) return true;
@@ -44,12 +83,24 @@ public class TaskReviewRoundService {
         return lastRound.getStatus() != TaskReviewRound.RoundStatus.OPEN;
     }
 
+    /**
+     * Проверяет, завершён ли последний раунд ревью.
+     *
+     * @param taskId идентификатор задачи
+     * @return true, если последний раунд имеет статус COMPLETED
+     */
     public boolean isLastRoundCompleted(UUID taskId) {
         List<TaskReviewRound> rounds = roundRepository.findByTaskIdOrderByRoundNumberDesc(taskId);
         if (rounds.isEmpty()) return false;
         return rounds.get(0).getStatus() == TaskReviewRound.RoundStatus.COMPLETED;
     }
 
+    /**
+     * Возвращает раунды для отображения в UI с инициализированными связями.
+     *
+     * @param taskId идентификатор задачи
+     * @return список раундов для представления
+     */
     public List<TaskReviewRound> getRoundsForView(UUID taskId) {
         List<TaskReviewRound> rounds = roundRepository.findByTaskIdOrderByRoundNumberDesc(taskId);
         rounds.forEach(round -> {
@@ -60,12 +111,25 @@ public class TaskReviewRoundService {
         return rounds;
     }
 
+    /**
+     * Возвращает текущий (последний) раунд ревью задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @return текущий раунд или null
+     */
     public TaskReviewRound getCurrentRound(UUID taskId) {
         List<TaskReviewRound> rounds = roundRepository.findByTaskIdOrderByRoundNumberDesc(taskId);
         return rounds.isEmpty() ? null : rounds.get(0);
     }
 
     @Transactional
+    /**
+     * Создаёт новый раунд ревью.
+     *
+     * @param taskId идентификатор задачи
+     * @param summaryComment итоговый комментарий раунда
+     * @return созданный раунд
+     */
     public TaskReviewRound createNewRound(UUID taskId, String summaryComment) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
@@ -111,6 +175,12 @@ public class TaskReviewRoundService {
     }
 
     @Transactional
+    /**
+     * Завершает открытый раунд ревью и переводит ревьюеров в PENDING при необходимости.
+     *
+     * @param roundId идентификатор раунда
+     * @return обновлённый раунд
+     */
     public TaskReviewRound completeRound(UUID roundId) {
         TaskReviewRound round = findById(roundId);
         Task task = round.getTask();
@@ -163,12 +233,25 @@ public class TaskReviewRoundService {
     }
 
     @Transactional
+    /**
+     * Обновляет итоговый комментарий раунда ревью.
+     *
+     * @param roundId идентификатор раунда
+     * @param summaryComment новый текст комментария
+     * @return обновлённый раунд
+     */
     public TaskReviewRound updateSummary(UUID roundId, String summaryComment) {
         TaskReviewRound round = findById(roundId);
         round.setSummaryComment(summaryComment);
         return roundRepository.save(round);
     }
 
+    /**
+     * Возвращает раунд ревью по идентификатору.
+     *
+     * @param id идентификатор раунда
+     * @return найденный раунд
+     */
     public TaskReviewRound findById(UUID id) {
         return roundRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Итерация ревью", id));

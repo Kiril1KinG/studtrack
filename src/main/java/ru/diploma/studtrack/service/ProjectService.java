@@ -21,31 +21,75 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+/**
+ * Управляет проектами, участниками и проверками прав доступа.
+ */
 public class ProjectService {
 
+    /**
+     * Репозиторий проектов.
+     */
     private final ProjectRepository projectRepository;
+    /**
+     * Репозиторий участников проекта.
+     */
     private final ProjectMemberRepository projectMemberRepository;
+    /**
+     * Репозиторий связей исполнителей задач.
+     */
     private final TaskAssigneeRepository taskAssigneeRepository;
+    /**
+     * Репозиторий связей ревьюеров задач.
+     */
     private final TaskReviewerRepository taskReviewerRepository;
+    /**
+     * Сервис пользователей.
+     */
     private final UserService userService;
+    /**
+     * Сервис уведомлений.
+     */
     private final NotificationService notificationService;
 
+    /**
+     * Возвращает проекты текущего пользователя.
+     *
+     * @return список проектов
+     */
     public List<Project> getMyProjects() {
         UUID currentUserId = userService.getCurrentUserId();
         return projectRepository.findAllByMemberId(currentUserId);
     }
 
+    /**
+     * Возвращает проекты, где текущий пользователь является владельцем.
+     *
+     * @return список проектов владельца
+     */
     public List<Project> getOwnedProjects() {
         UUID currentUserId = userService.getCurrentUserId();
         return projectRepository.findByOwnerId(currentUserId);
     }
 
+    /**
+     * Возвращает проект по идентификатору.
+     *
+     * @param id идентификатор проекта
+     * @return найденный проект
+     */
     public Project findById(UUID id) {
         return projectRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Проект", id));
     }
 
     @Transactional
+    /**
+     * Создаёт проект и автоматически добавляет владельца в участники.
+     *
+     * @param name название проекта
+     * @param description описание проекта
+     * @return созданный проект
+     */
     public Project create(String name, String description) {
         User currentUser = userService.getCurrentUser();
         Project project = Project.builder()
@@ -59,6 +103,14 @@ public class ProjectService {
     }
 
     @Transactional
+    /**
+     * Обновляет проект.
+     *
+     * @param id идентификатор проекта
+     * @param name новое название
+     * @param description новое описание
+     * @return обновлённый проект
+     */
     public Project update(UUID id, String name, String description) {
         Project project = findById(id);
         checkOwnership(project);
@@ -68,25 +120,57 @@ public class ProjectService {
     }
 
     @Transactional
+    /**
+     * Удаляет проект.
+     *
+     * @param id идентификатор проекта
+     */
     public void delete(UUID id) {
         Project project = findById(id);
         checkOwnership(project);
         projectRepository.delete(project);
     }
 
+    /**
+     * Возвращает участников проекта.
+     *
+     * @param projectId идентификатор проекта
+     * @return список участников
+     */
     public List<ProjectMember> getMembers(UUID projectId) {
         return projectMemberRepository.findByProjectId(projectId);
     }
 
+    /**
+     * Проверяет, состоит ли пользователь в проекте.
+     *
+     * @param projectId идентификатор проекта
+     * @param userId идентификатор пользователя
+     * @return true, если пользователь состоит в проекте
+     */
     public boolean isMember(UUID projectId, UUID userId) {
         return projectMemberRepository.existsByProjectIdAndUserId(projectId, userId);
     }
 
+    /**
+     * Проверяет, является ли пользователь владельцем проекта.
+     *
+     * @param projectId идентификатор проекта
+     * @param userId идентификатор пользователя
+     * @return true, если пользователь владелец проекта
+     */
     public boolean isOwner(UUID projectId, UUID userId) {
         return projectRepository.isOwner(projectId, userId);
     }
 
     @Transactional
+    /**
+     * Добавляет участника в проект.
+     *
+     * @param projectId идентификатор проекта
+     * @param userId идентификатор пользователя
+     * @return созданная запись участника
+     */
     public ProjectMember addMember(UUID projectId, UUID userId) {
         Project project = findById(projectId);
         User user = userService.findById(userId);
@@ -107,6 +191,12 @@ public class ProjectService {
     }
 
     @Transactional
+    /**
+     * Удаляет участника из проекта и связанные назначения по задачам.
+     *
+     * @param projectId идентификатор проекта
+     * @param userId идентификатор пользователя
+     */
     public void removeMember(UUID projectId, UUID userId) {
         Project project = findById(projectId);
         checkOwnership(project);
@@ -121,6 +211,11 @@ public class ProjectService {
     }
 
     @Transactional
+    /**
+     * Удаляет текущего пользователя из проекта.
+     *
+     * @param projectId идентификатор проекта
+     */
     public void leaveProject(UUID projectId) {
         UUID currentUserId = userService.getCurrentUserId();
         Project project = findById(projectId);
@@ -134,6 +229,11 @@ public class ProjectService {
         projectMemberRepository.deleteByProjectIdAndUserId(projectId, currentUserId);
     }
 
+    /**
+     * Проверяет, что текущий пользователь является владельцем проекта.
+     *
+     * @param project проверяемый проект
+     */
     private void checkOwnership(Project project) {
         UUID currentUserId = userService.getCurrentUserId();
         if (!project.getOwner().getId().equals(currentUserId)) {
@@ -141,6 +241,11 @@ public class ProjectService {
         }
     }
 
+    /**
+     * Проверяет членство текущего пользователя в проекте.
+     *
+     * @param projectId идентификатор проекта
+     */
     public void checkMembership(UUID projectId) {
         UUID currentUserId = userService.getCurrentUserId();
         if (!isMember(projectId, currentUserId)) {

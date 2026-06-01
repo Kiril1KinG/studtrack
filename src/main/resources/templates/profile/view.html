@@ -130,7 +130,7 @@
                             <a th:href="@{/tasks/{id}(id=${task.id})}"
                                class="text-decoration-none"
                                th:text="${task.title}">Задача</a>
-                            <span class="badge bg-info text-dark" th:text="${task.status}">STATUS</span>
+                            <span class="badge bg-info text-dark" th:text="${T(ru.diploma.studtrack.util.UiLabels).taskStatus(task.status)}">STATUS</span>
                         </li>
                     </ul>
                 </div>

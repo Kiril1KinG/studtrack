@@ -33,6 +33,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * Сущность задачи проекта.
+ */
 public class Task {
 
     @Id
@@ -93,14 +96,25 @@ public class Task {
     @OrderBy("uploadedAt DESC")
     private List<TaskAttachment> attachments = new ArrayList<>();
 
+    /**
+     * Перечисляет состояния задачи в рабочем процессе.
+     */
     public enum TaskStatus {
         BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE
     }
 
+    /**
+     * Перечисляет уровни приоритета задачи.
+     */
     public enum Priority {
         LOW, MEDIUM, HIGH
     }
 
+    /**
+     * Возвращает первого назначенного исполнителя задачи.
+     *
+     * @return основной исполнитель или null
+     */
     public User getPrimaryAssignee() {
         return assignees.stream()
                 .map(TaskAssignee::getUser)

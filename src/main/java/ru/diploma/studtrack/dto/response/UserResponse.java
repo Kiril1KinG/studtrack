@@ -12,6 +12,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO ответа с данными пользователя.
+ */
 public class UserResponse {
 
     private UUID id;

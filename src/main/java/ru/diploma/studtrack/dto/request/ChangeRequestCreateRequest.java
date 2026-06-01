@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO запроса создания замечания.
+ */
 public class ChangeRequestCreateRequest {
 
     @NotBlank(message = "Текст замечания обязателен")

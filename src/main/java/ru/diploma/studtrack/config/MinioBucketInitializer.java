@@ -14,12 +14,26 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
+/**
+ * Проверяет наличие бакета MinIO при запуске и создаёт его при отсутствии.
+ */
 public class MinioBucketInitializer {
 
+    /**
+     * S3-клиент для проверки и создания бакета.
+     */
     private final S3Client s3Client;
+    /**
+     * Настройки MinIO.
+     */
     private final MinioProperties minioProperties;
 
     @Bean
+    /**
+     * Возвращает runner инициализации бакета MinIO.
+     *
+     * @return bean ApplicationRunner
+     */
     public ApplicationRunner ensureMinioBucketExists() {
         return args -> {
             String bucket = minioProperties.bucket();

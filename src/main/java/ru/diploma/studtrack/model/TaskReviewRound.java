@@ -55,7 +55,10 @@ public class TaskReviewRound {
     @OrderBy("createdAt ASC")
     private List<ChangeRequest> changeRequests = new ArrayList<>();
 
-    public enum RoundStatus {
+    /**
+ * Сущность раунда ревью задачи.
+ */
+public enum RoundStatus {
         OPEN,
         COMPLETED,
         CANCELED

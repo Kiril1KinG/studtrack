@@ -11,6 +11,9 @@ import ru.diploma.studtrack.model.Task;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO запроса изменения статуса задачи.
+ */
 public class TaskStatusUpdateRequest {
 
     @NotNull(message = "Статус задачи обязателен")

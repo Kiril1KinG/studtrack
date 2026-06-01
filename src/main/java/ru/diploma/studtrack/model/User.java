@@ -23,6 +23,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * Сущность пользователя системы.
+ */
 public class User {
 
     @Id

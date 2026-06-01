@@ -26,6 +26,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * Сущность проекта командной работы.
+ */
 public class Project {
 
     @Id

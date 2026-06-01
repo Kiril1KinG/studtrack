@@ -14,9 +14,18 @@ import java.net.URI;
 
 @Configuration
 @EnableConfigurationProperties(MinioProperties.class)
+/**
+ * Конфигурирует S3-клиенты для работы с MinIO.
+ */
 public class StorageConfig {
 
     @Bean
+    /**
+     * Создаёт S3-клиент для операций чтения и записи объектов.
+     *
+     * @param properties настройки MinIO
+     * @return bean S3Client
+     */
     public S3Client s3Client(MinioProperties properties) {
         return S3Client.builder()
                 .endpointOverride(URI.create(properties.endpoint()))
@@ -29,6 +38,12 @@ public class StorageConfig {
     }
 
     @Bean
+    /**
+     * Создаёт presigner для генерации временных URL доступа к объектам.
+     *
+     * @param properties настройки MinIO
+     * @return bean S3Presigner
+     */
     public S3Presigner s3Presigner(MinioProperties properties) {
         String presignEndpoint = properties.publicEndpoint() != null && !properties.publicEndpoint().isBlank()
                 ? properties.publicEndpoint()

@@ -18,24 +18,65 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+/**
+ * Управляет исполнителями задач: назначением, снятием и проверками доступа.
+ */
 public class TaskAssigneeService {
 
+    /**
+     * Репозиторий связей «задача-исполнитель».
+     */
     private final TaskAssigneeRepository taskAssigneeRepository;
+    /**
+     * Сервис чтения и изменения задач.
+     */
     private final TaskService taskService;
+    /**
+     * Сервис работы с пользователями.
+     */
     private final UserService userService;
+    /**
+     * Сервис проверки членства и ролей в проекте.
+     */
     private final ProjectService projectService;
+    /**
+     * Сервис отправки пользовательских уведомлений.
+     */
     private final NotificationService notificationService;
+    /**
+     * Сервис фиксации истории изменений задачи.
+     */
     private final TaskHistoryService taskHistoryService;
 
+    /**
+     * Возвращает всех исполнителей задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @return список исполнителей
+     */
     public List<TaskAssignee> getAssigneesByTask(UUID taskId) {
         return taskAssigneeRepository.findByTaskId(taskId);
     }
 
+    /**
+     * Проверяет, назначен ли пользователь исполнителем задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @param userId идентификатор пользователя
+     * @return true, если пользователь назначен исполнителем
+     */
     public boolean isAssignee(UUID taskId, UUID userId) {
         return taskAssigneeRepository.existsByTaskIdAndUserId(taskId, userId);
     }
 
     @Transactional
+    /**
+     * Назначает исполнителя на задачу с проверкой полномочий.
+     *
+     * @param taskId идентификатор задачи
+     * @param assigneeId идентификатор назначаемого пользователя
+     * @return созданная связь «задача-исполнитель»
+     */
     public TaskAssignee addAssignee(UUID taskId, UUID assigneeId) {
         Task task = findTask(taskId);
         projectService.checkMembership(task.getProject().getId());
@@ -70,6 +111,12 @@ public class TaskAssigneeService {
     }
 
     @Transactional
+    /**
+     * Снимает исполнителя с задачи с учётом ограничений статуса ревью.
+     *
+     * @param taskId идентификатор задачи
+     * @param assigneeId идентификатор пользователя
+     */
     public void removeAssignee(UUID taskId, UUID assigneeId) {
         Task task = findTask(taskId);
         projectService.checkMembership(task.getProject().getId());
@@ -100,6 +147,12 @@ public class TaskAssigneeService {
         ));
     }
 
+    /**
+     * Возвращает задачу по идентификатору.
+     *
+     * @param taskId идентификатор задачи
+     * @return найденная задача
+     */
     private Task findTask(UUID taskId) {
         return taskService.findById(taskId);
     }

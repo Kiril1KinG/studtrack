@@ -20,20 +20,55 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+/**
+ * Управляет ревьюерами задачи и обработкой результатов ревью.
+ */
 public class TaskReviewerService {
 
+    /**
+     * Репозиторий связей «задача-ревьюер».
+     */
     private final TaskReviewerRepository taskReviewerRepository;
+    /**
+     * Сервис чтения и изменения задач.
+     */
     private final TaskService taskService;
+    /**
+     * Сервис операций с исполнителями задачи.
+     */
     private final TaskAssigneeService taskAssigneeService;
+    /**
+     * Сервис работы с пользователями.
+     */
     private final UserService userService;
+    /**
+     * Сервис проверки прав доступа в проекте.
+     */
     private final ProjectService projectService;
+    /**
+     * Сервис отправки уведомлений.
+     */
     private final NotificationService notificationService;
+    /**
+     * Сервис фиксации истории задачи.
+     */
     private final TaskHistoryService taskHistoryService;
 
+    /**
+     * Возвращает ревьюеров задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @return список ревьюеров
+     */
     public List<TaskReviewer> getReviewersByTask(UUID taskId) {
         return taskReviewerRepository.findByTaskId(taskId);
     }
 
+    /**
+     * Возвращает ожидающие ревью текущего пользователя.
+     *
+     * @return список ожидающих ревью
+     */
     public List<TaskReviewer> getPendingReviewsForCurrentUser() {
         UUID currentUserId = userService.getCurrentUserId();
         return taskReviewerRepository.findByUserId(currentUserId).stream()
@@ -42,6 +77,12 @@ public class TaskReviewerService {
                 .toList();
     }
 
+    /**
+     * Возвращает ожидающие ревью текущего пользователя по конкретной задаче.
+     *
+     * @param taskId идентификатор задачи
+     * @return список ожидающих ревью по задаче
+     */
     public List<TaskReviewer> getPendingReviewsForCurrentUserByTask(UUID taskId) {
         UUID currentUserId = userService.getCurrentUserId();
         return taskReviewerRepository.findByTaskId(taskId).stream()
@@ -52,6 +93,13 @@ public class TaskReviewerService {
     }
 
     @Transactional
+    /**
+     * Добавляет ревьюера к задаче с проверкой ролей и ограничений.
+     *
+     * @param taskId идентификатор задачи
+     * @param reviewerId идентификатор пользователя-ревьюера
+     * @return созданное назначение ревьюера
+     */
     public TaskReviewer addReviewer(UUID taskId, UUID reviewerId) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
@@ -93,6 +141,12 @@ public class TaskReviewerService {
     }
 
     @Transactional
+    /**
+     * Удаляет ревьюера из задачи.
+     *
+     * @param taskId идентификатор задачи
+     * @param reviewerId идентификатор пользователя-ревьюера
+     */
     public void removeReviewer(UUID taskId, UUID reviewerId) {
         Task task = taskService.findById(taskId);
         projectService.checkMembership(task.getProject().getId());
@@ -114,6 +168,15 @@ public class TaskReviewerService {
     }
 
     @Transactional
+    /**
+     * Сохраняет результат ревью от назначенного ревьюера.
+     *
+     * @param taskId идентификатор задачи
+     * @param reviewerId идентификатор ревьюера
+     * @param status итоговый статус ревью
+     * @param comment комментарий ревью
+     * @return обновлённая запись ревьюера
+     */
     public TaskReviewer submitReview(UUID taskId, UUID reviewerId, TaskReviewer.ReviewStatus status, String comment) {
         TaskReviewer taskReviewer = taskReviewerRepository.findByTaskIdAndUserId(taskId, reviewerId)
                 .orElseThrow(() -> new NotFoundException("Назначение ревьюера не найдено"));
@@ -139,6 +202,12 @@ public class TaskReviewerService {
         return saved;
     }
 
+    /**
+     * Проверяет, одобрена ли задача большинством ревьюеров.
+     *
+     * @param taskId идентификатор задачи
+     * @return true, если одобрений больше половины
+     */
     public boolean isApprovedByMajority(UUID taskId) {
         List<TaskReviewer> reviewers = taskReviewerRepository.findByTaskId(taskId);
 

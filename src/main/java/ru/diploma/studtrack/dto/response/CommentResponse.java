@@ -12,6 +12,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * DTO ответа с данными комментария.
+ */
 public class CommentResponse {
 
     private UUID id;
